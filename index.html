@@ -12,14 +12,21 @@
     <!-- Word Pair Form -->
     <form id="word-form">
         <h2>Enter Word Pairs</h2>
-        <!-- Textarea for entering word pairs with the specified format -->
         <textarea id="word-input" placeholder="Enter word pairs: EnglishWord1,PolishWord1\nEnglishWord2,PolishWord2" rows="10" cols="30" required></textarea>
         <button type="submit">Start Game</button>
     </form>
 
     <!-- Game Container -->
     <div id="game-container" style="display:none;">
-        <h2 id="turn-indicator">Player 1's Turn</h2>
+        <!-- Score Table -->
+        <table id="score-table">
+            <tr>
+                <td id="player1-score">Player 1: 0</td>
+                <td id="current-player">Player 1's Turn</td>
+                <td id="player2-score">Player 2: 0</td>
+            </tr>
+        </table>
+
         <div id="game-board"></div>
         <button onclick="restartGame()">Restart Game</button>
     </div>
