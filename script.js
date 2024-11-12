@@ -1,18 +1,12 @@
-// Array to store word pairs (English and Polish)
-let wordPairs = [];
-// Variable to track the current player (1 or 2)
-let currentPlayer = 1;
-// Array to store the currently flipped cards for comparison
-let flippedCards = [];
-// Boolean to lock the board and prevent clicks during a check for matches
-let boardLocked = false;
-// Array to hold scores for Player 1 and Player 2
-let playerScores = [0, 0];
+let wordPairs = [];       // Array to store word pairs with unique IDs
+let currentPlayer = 1;    // Variable to track the current player (1 or 2)
+let flippedCards = [];    // Array to store the currently flipped cards for comparison
+let boardLocked = false;  // Boolean to lock the board during match checking
+let playerScores = [0, 0];// Array to hold scores for Player 1 and Player 2
 
-// Event listener for the form submission to start the game
 document.getElementById("word-form").addEventListener("submit", startGame);
 
-// Function to add a new pair of input fields to the form for additional word pairs
+// Function to add new input fields for additional word pairs
 function addPair() {
     const container = document.getElementById("pairs-input");
     container.innerHTML += '<input type="text" placeholder="English Word" required><input type="text" placeholder="Polish Word" required>';
@@ -20,7 +14,7 @@ function addPair() {
 
 // Function to start the game, triggered on form submission
 function startGame(event) {
-    event.preventDefault(); // Prevent form from submitting traditionally
+    event.preventDefault(); // Prevent default form submission
     const inputs = document.querySelectorAll("#pairs-input input");
     wordPairs = []; // Reset word pairs array
 
@@ -28,18 +22,22 @@ function startGame(event) {
     for (let i = 0; i < inputs.length; i += 2) {
         const engWord = inputs[i].value;
         const plWord = inputs[i + 1].value;
-        // Add each word pair as two separate objects (one for each language)
-        wordPairs.push({ text: engWord, lang: 'EN' }, { text: plWord, lang: 'PL' });
+        // Create a pair with a unique ID and both language versions
+        const pairId = `pair-${i / 2}`;
+        wordPairs.push(
+            { id: pairId, text: engWord, lang: 'EN' },
+            { id: pairId, text: plWord, lang: 'PL' }
+        );
     }
 
-    shuffle(wordPairs); // Shuffle the word pairs to randomize their positions
-    setupBoard(); // Set up the game board with the shuffled pairs
+    shuffle(wordPairs); // Shuffle word pairs
+    setupBoard(); // Setup the game board
     document.getElementById("word-form").style.display = "none"; // Hide the form
     document.getElementById("game-container").style.display = "block"; // Show the game container
     updateTurnIndicator(); // Initialize turn indicator with player names and scores
 }
 
-// Function to shuffle the array of word pairs using Fisher-Yates algorithm
+// Shuffle function using the Fisher-Yates algorithm
 function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -47,28 +45,28 @@ function shuffle(array) {
     }
 }
 
-// Function to set up the game board and display cards based on shuffled word pairs
+// Setup the game board based on shuffled word pairs
 function setupBoard() {
     const board = document.getElementById("game-board");
     board.innerHTML = ''; // Clear any existing cards
     wordPairs.forEach((pair, index) => {
         const card = document.createElement("div");
-        card.classList.add("card"); // Add card styling
+        card.classList.add("card"); // Add styling
         card.dataset.index = index; // Unique index for the card
-        card.dataset.text = pair.text; // Store the word text
+        card.dataset.pairId = pair.id; // Unique pair ID
         card.dataset.lang = pair.lang; // Store the language (EN or PL)
         card.innerHTML = ''; // Initially keep the card blank
-        card.addEventListener("click", () => flipCard(card)); // Add click event listener for flipping
+        card.addEventListener("click", () => flipCard(card)); // Add click event listener
         board.appendChild(card); // Add card to the game board
     });
 }
 
-// Function to handle card flipping logic
+// Handle card flipping logic
 function flipCard(card) {
     if (boardLocked || card.classList.contains("flipped")) return; // Prevent flipping if locked or already flipped
 
     card.classList.add("flipped"); // Add flipped class for styling
-    card.innerHTML = card.dataset.text; // Show the word on the card
+    card.innerHTML = wordPairs[card.dataset.index].text; // Show the word on the card
     flippedCards.push(card); // Add the card to the flippedCards array
 
     if (flippedCards.length === 2) {
@@ -76,23 +74,24 @@ function flipCard(card) {
     }
 }
 
-// Function to check if the two flipped cards match
+// Function to check if two flipped cards form a pair
 function checkMatch() {
     const [card1, card2] = flippedCards; // Get the two flipped cards
-    // Check if texts match but languages differ (to match English and Polish versions of the same word)
-    const isMatch = card1.dataset.text === card2.dataset.text && card1.dataset.lang !== card2.dataset.lang;
+
+    // Check if the pair IDs match, meaning these two cards are a matching pair
+    const isMatch = card1.dataset.pairId === card2.dataset.pairId;
 
     if (isMatch) {
         // Award a point to the current player
         playerScores[currentPlayer - 1]++;
         updateTurnIndicator(); // Update the score display
 
-        // Hide the matched cards after a short delay
+        // Hide matched cards after a short delay
         setTimeout(() => {
             card1.style.visibility = "hidden";
             card2.style.visibility = "hidden";
-            flippedCards = []; // Clear flipped cards array for the next turn
-            // Check if the game is over by seeing if total matches equals half the cards
+            flippedCards = []; // Clear flipped cards array
+            // Check if the game is over by seeing if all pairs are matched
             if (playerScores.reduce((a, b) => a + b) === wordPairs.length / 2) {
                 // Display game-over alert with final scores
                 setTimeout(() => alert(`Game Over! Final Scores - Player 1: ${playerScores[0]}, Player 2: ${playerScores[1]}`), 500);
