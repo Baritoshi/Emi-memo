@@ -6,29 +6,28 @@ let playerScores = [0, 0];// Array to hold scores for Player 1 and Player 2
 
 document.getElementById("word-form").addEventListener("submit", startGame);
 
-// Function to add new input fields for additional word pairs
-function addPair() {
-    const container = document.getElementById("pairs-input");
-    container.innerHTML += '<input type="text" placeholder="English Word" required><input type="text" placeholder="Polish Word" required>';
-}
-
 // Function to start the game, triggered on form submission
 function startGame(event) {
     event.preventDefault(); // Prevent default form submission
-    const inputs = document.querySelectorAll("#pairs-input input");
+    const inputText = document.getElementById("word-input").value.trim(); // Get and trim the input
+    const lines = inputText.split("\n"); // Split input into lines
+
     wordPairs = []; // Reset word pairs array
 
-    // Collect pairs of words from the form input fields
-    for (let i = 0; i < inputs.length; i += 2) {
-        const engWord = inputs[i].value;
-        const plWord = inputs[i + 1].value;
-        // Create a pair with a unique ID and both language versions
-        const pairId = `pair-${i / 2}`;
-        wordPairs.push(
-            { id: pairId, text: engWord, lang: 'EN' },
-            { id: pairId, text: plWord, lang: 'PL' }
-        );
-    }
+    // Parse each line to extract word pairs
+    lines.forEach((line, index) => {
+        const words = line.split(",");
+        if (words.length === 2) {
+            const engWord = words[0].trim(); // English word
+            const plWord = words[1].trim();  // Polish word
+            const pairId = `pair-${index}`; // Unique ID for each pair
+            // Add both English and Polish words as separate cards with the same pair ID
+            wordPairs.push(
+                { id: pairId, text: engWord, lang: 'EN' },
+                { id: pairId, text: plWord, lang: 'PL' }
+            );
+        }
+    });
 
     shuffle(wordPairs); // Shuffle word pairs
     setupBoard(); // Setup the game board
@@ -126,7 +125,7 @@ function updateTurnIndicator() {
 // Function to restart the game, resetting scores and displaying the form again
 function restartGame() {
     document.getElementById("word-form").reset(); // Reset form fields
-    document.getElementById("pairs-input").innerHTML = '<input type="text" placeholder="English Word" required><input type="text" placeholder="Polish Word" required>'; // Reset to initial input fields
+    document.getElementById("word-input").value = ''; // Clear textarea
     document.getElementById("word-form").style.display = "block"; // Show the form
     document.getElementById("game-container").style.display = "none"; // Hide the game container
     playerScores = [0, 0]; // Reset player scores

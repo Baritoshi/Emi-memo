@@ -8,16 +8,16 @@
 </head>
 <body>
     <h1>Memory Card Game</h1>
+
+    <!-- Word Pair Form -->
     <form id="word-form">
         <h2>Enter Word Pairs</h2>
-        <div id="pairs-input">
-            <input type="text" placeholder="English Word" required>
-            <input type="text" placeholder="Polish Word" required>
-        </div>
-        <button type="button" onclick="addPair()">Add Another Pair</button>
+        <!-- Textarea for entering word pairs with the specified format -->
+        <textarea id="word-input" placeholder="Enter word pairs: EnglishWord1,PolishWord1\nEnglishWord2,PolishWord2" rows="10" cols="30" required></textarea>
         <button type="submit">Start Game</button>
     </form>
 
+    <!-- Game Container -->
     <div id="game-container" style="display:none;">
         <h2 id="turn-indicator">Player 1's Turn</h2>
         <div id="game-board"></div>
