@@ -9,41 +9,14 @@ body {
     margin-top: 20px;
 }
 
-#pairs-input {
-    display: flex;
-    flex-direction: column;
-}
-
-#pairs-input input {
-    margin: 5px;
+#word-input {
+    width: 100%;
+    max-width: 300px;
     padding: 8px;
+    margin-bottom: 10px;
 }
 
-#game-board {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: 10px;
-    margin-top: 20px;
-    max-width: 800px; /* Limit width to 8 columns of 100px each */
-}
-
-.card {
-    width: 100px;
-    height: 100px;
-    background-color: lightgray;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 18px;
-    cursor: pointer;
-    border-radius: 8px;
-}
-
-.card.flipped {
-    background-color: white;
-    cursor: default;
-}
-
+/* Style for the score table */
 #score-table {
     width: 100%;
     max-width: 400px;
@@ -60,4 +33,33 @@ body {
 
 #current-player {
     font-weight: bold;
-}	
+}
+
+/* Game board styling */
+#game-board {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+    margin-top: 20px;
+    max-width: 800px; /* Limit width to 8 columns of 100px each */
+}
+
+/* Card styling */
+.card {
+    width: 100px;
+    height: 100px;
+    background-color: lightgray;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+    color: black;
+    text-align: center;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.card.flipped {
+    background-color: white;
+    cursor: default;
+}
