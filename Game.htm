@@ -1,1 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Card Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Memory Card Game</h1>
+    <form id="word-form">
+        <h2>Enter Word Pairs</h2>
+        <div id="pairs-input">
+            <input type="text" placeholder="English Word" required>
+            <input type="text" placeholder="Polish Word" required>
+        </div>
+        <button type="button" onclick="addPair()">Add Another Pair</button>
+        <button type="submit">Start Game</button>
+    </form>
 
+    <div id="game-container" style="display:none;">
+        <h2 id="turn-indicator">Player 1's Turn</h2>
+        <div id="game-board"></div>
+        <button onclick="restartGame()">Restart Game</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
