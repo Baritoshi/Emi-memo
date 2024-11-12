@@ -36,6 +36,16 @@ function startGame(event) {
     updateTurnIndicator(); // Initialize turn indicator with player names and scores
 }
 
+// Function to update the turn indicator and scores in the table
+function updateTurnIndicator() {
+    // Update Player 1 and Player 2 scores
+    document.getElementById("player1-score").textContent = `Player 1: ${playerScores[0]}`;
+    document.getElementById("player2-score").textContent = `Player 2: ${playerScores[1]}`;
+
+    // Update the current player's turn in the center cell
+    document.getElementById("current-player").textContent = `Player ${currentPlayer}'s Turn`;
+}
+
 // Shuffle function using the Fisher-Yates algorithm
 function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -115,11 +125,6 @@ function checkMatch() {
 function switchPlayer() {
     currentPlayer = currentPlayer === 1 ? 2 : 1; // Toggle between Player 1 and Player 2
     updateTurnIndicator(); // Update the turn indicator with the new player
-}
-
-// Function to update the turn indicator, showing current player and scores
-function updateTurnIndicator() {
-    document.getElementById("turn-indicator").textContent = `Player ${currentPlayer}'s Turn - Player 1: ${playerScores[0]}, Player 2: ${playerScores[1]}`;
 }
 
 // Function to restart the game, resetting scores and displaying the form again
