@@ -31,6 +31,12 @@ form {
     font-weight: bold;
 }
 
+#turn-indicator {
+    font-size: 20px;
+    color: #333;
+    text-align: center;
+}
+
 #game-board {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
