@@ -6,7 +6,7 @@ body {
 }
 
 form {
-    margin-top: 20px;
+    margin: 20px;
 }
 
 #player-names {
@@ -16,6 +16,7 @@ form {
 #player-names input {
     display: block;
     margin-bottom: 5px;
+    width: 200px;
 }
 
 #score-board {
@@ -47,16 +48,6 @@ form {
     display: flex;
     justify-content: center;
     align-items: center;
-}
-
-.card img {
-    display: none;
-    max-width: 100%;
-    max-height: 100%;
-}
-
-.card.flipped img {
-    display: block;
 }
 
 .card.flipped {
