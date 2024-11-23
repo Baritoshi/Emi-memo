@@ -1,156 +1,160 @@
-let players = [];         // Array to store player details (name and score)
+let wordPairs = [];         // Array to store word pairs with unique IDs
+let players = [];           // Array to store player data (name and score)
 let currentPlayerIndex = 0; // Index of the current player
-let images = [];          // Array to store image URLs
-let flippedCards = [];    // Array to store the currently flipped cards for comparison
-let boardLocked = false;  // Boolean to lock the board during match checking
+let flippedCards = [];      // Array to store the currently flipped cards for comparison
+let boardLocked = false;    // Boolean to lock the board during match checking
 
-document.getElementById("player-config-form").addEventListener("submit", configurePlayers);
-document.getElementById("generate-names").addEventListener("click", generatePlayerFields);
-document.getElementById("image-form").addEventListener("submit", startGame);
+// Event listener for the word form submission
+document.getElementById("word-form").addEventListener("submit", configurePlayers);
 
-// Function to generate input fields for player names
-function generatePlayerFields() {
-    const numPlayers = parseInt(document.getElementById("num-players").value);
-    const playerNamesDiv = document.getElementById("player-names");
-    playerNamesDiv.innerHTML = ''; // Clear existing fields
-
-    for (let i = 1; i <= numPlayers; i++) {
-        const input = document.createElement("input");
-        input.type = "text";
-        input.placeholder = `Player ${i} Name`;
-        input.required = true;
-        input.id = `player-${i}`;
-        playerNamesDiv.appendChild(input);
-    }
-}
-
-// Function to configure players and start the image input phase
+// Function to configure players and move to the game setup
 function configurePlayers(event) {
-    event.preventDefault();
+    event.preventDefault(); // Prevent default form submission
 
-    players = []; // Reset players array
-    const numPlayers = parseInt(document.getElementById("num-players").value);
+    // Get the number of players
+    const numPlayers = parseInt(document.getElementById("num-players").value, 10);
+    players = []; // Reset the players array
 
-    for (let i = 1; i <= numPlayers; i++) {
-        const playerName = document.getElementById(`player-${i}`).value.trim();
+    // Collect player names and initialize scores
+    for (let i = 0; i < numPlayers; i++) {
+        const playerName = document.getElementById(`player-name-${i + 1}`).value.trim();
         players.push({ name: playerName, score: 0 });
     }
 
-    document.getElementById("player-config-form").style.display = "none"; // Hide the player config form
-    document.getElementById("image-form").style.display = "block"; // Show the image input form
+    // Show the game setup form and hide the player configuration form
+    document.getElementById("player-config").style.display = "none";
+    document.getElementById("word-setup").style.display = "block";
 }
 
-// Function to start the game
+// Function to start the game, triggered on word form submission
 function startGame(event) {
-    event.preventDefault();
-    const inputText = document.getElementById("image-input").value.trim();
-    const lines = inputText.split("\n");
+    event.preventDefault(); // Prevent default form submission
+    const inputText = document.getElementById("word-input").value.trim(); // Get and trim the input
+    const lines = inputText.split("\n"); // Split input into lines
 
-    images = []; // Reset images array
-    lines.forEach((line) => {
-        const url = line.trim();
-        if (url) {
-            images.push({ id: url, src: url });
-            images.push({ id: url, src: url });
+    wordPairs = []; // Reset word pairs array
+
+    // Parse each line to extract word pairs
+    lines.forEach((line, index) => {
+        const words = line.split(",");
+        if (words.length === 2) {
+            const engWord = words[0].trim(); // English word
+            const plWord = words[1].trim();  // Polish word
+            const pairId = `pair-${index}`; // Unique ID for each pair
+            // Add both English and Polish words as separate cards with the same pair ID
+            wordPairs.push(
+                { id: pairId, text: engWord, lang: 'EN' },
+                { id: pairId, text: plWord, lang: 'PL' }
+            );
         }
     });
 
-    shuffle(images);
-    setupBoard();
-    document.getElementById("image-form").style.display = "none"; // Hide the image input form
-    document.getElementById("game-container").style.display = "block"; // Show the game container
-    updateScoreBoard();
+    shuffle(wordPairs); // Shuffle word pairs
+    setupBoard(); // Setup the game board
+
+    // Show the game container and hide the word form
+    document.getElementById("word-setup").style.display = "none";
+    document.getElementById("game-container").style.display = "block";
+
+    updateScoreBoard(); // Initialize the scoreboard
 }
 
-// Function to shuffle the array of images
+// Shuffle function using the Fisher-Yates algorithm
 function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+        [array[i], array[j]] = [array[j], array[i]]; // Swap elements
     }
 }
 
-// Setup the game board based on shuffled images
+// Setup the game board based on shuffled word pairs
 function setupBoard() {
     const board = document.getElementById("game-board");
-    board.innerHTML = '';
-    images.forEach((image, index) => {
+    board.innerHTML = ''; // Clear any existing cards
+    wordPairs.forEach((pair, index) => {
         const card = document.createElement("div");
-        card.classList.add("card");
-        card.dataset.index = index;
-        card.dataset.id = image.id;
-
-        const imgElement = document.createElement("img");
-        imgElement.src = image.src;
-        card.appendChild(imgElement);
-
-        card.addEventListener("click", () => flipCard(card));
-        board.appendChild(card);
+        card.classList.add("card"); // Add styling
+        card.dataset.index = index; // Unique index for the card
+        card.dataset.pairId = pair.id; // Unique pair ID
+        card.dataset.lang = pair.lang; // Store the language (EN or PL)
+        card.innerHTML = ''; // Initially keep the card blank
+        card.addEventListener("click", () => flipCard(card)); // Add click event listener
+        board.appendChild(card); // Add card to the game board
     });
 }
 
-// Function to update the score board
+// Update the scoreboard and current player display
 function updateScoreBoard() {
-    const scoreBoard = document.getElementById("score-board");
-    scoreBoard.innerHTML = players.map((player, index) => {
-        const currentPlayerClass = index === currentPlayerIndex ? 'current-player' : '';
-        return `<div class="player-score ${currentPlayerClass}">${player.name}: ${player.score}</div>`;
+    const scoreboard = document.getElementById("score-board");
+    scoreboard.innerHTML = players.map((player, index) => {
+        const isCurrent = index === currentPlayerIndex ? 'current-player' : '';
+        return `<div class="player-score ${isCurrent}">${player.name}: ${player.score}</div>`;
     }).join('');
 }
 
 // Handle card flipping logic
 function flipCard(card) {
-    if (boardLocked || card.classList.contains("flipped")) return;
+    if (boardLocked || card.classList.contains("flipped")) return; // Prevent flipping if locked or already flipped
 
-    card.classList.add("flipped");
-    flippedCards.push(card);
+    card.classList.add("flipped"); // Add flipped class for styling
+    card.innerHTML = wordPairs[card.dataset.index].text; // Show the word on the card
+    flippedCards.push(card); // Add the card to the flippedCards array
 
     if (flippedCards.length === 2) {
-        checkMatch();
+        checkMatch(); // Check for a match if two cards are flipped
     }
 }
 
-// Check if two flipped cards form a pair
+// Function to check if two flipped cards form a pair
 function checkMatch() {
-    const [card1, card2] = flippedCards;
-    const isMatch = card1.dataset.id === card2.dataset.id;
+    const [card1, card2] = flippedCards; // Get the two flipped cards
+
+    // Check if the pair IDs match, meaning these two cards are a matching pair
+    const isMatch = card1.dataset.pairId === card2.dataset.pairId;
 
     if (isMatch) {
-        players[currentPlayerIndex].score++;
-        updateScoreBoard();
+        players[currentPlayerIndex].score++; // Award a point to the current player
+        updateScoreBoard(); // Update the score display
 
+        // Hide matched cards after a short delay
         setTimeout(() => {
             card1.style.visibility = "hidden";
             card2.style.visibility = "hidden";
-            flippedCards = [];
-            if (images.length / 2 === players.reduce((sum, player) => sum + player.score, 0)) {
-                alert("Game Over! Scores:\n" + players.map(p => `${p.name}: ${p.score}`).join("\n"));
+            flippedCards = []; // Clear flipped cards array
+
+            // Check if the game is over
+            if (players.reduce((sum, player) => sum + player.score, 0) === wordPairs.length / 2) {
+                const scores = players.map(p => `${p.name}: ${p.score}`).join("\n");
+                alert(`Game Over!\nScores:\n${scores}`);
             }
         }, 500);
     } else {
+        // Lock the board temporarily and unflip cards after a delay if no match is found
         boardLocked = true;
         setTimeout(() => {
-            card1.classList.remove("flipped");
-            card2.classList.remove("flipped");
-            flippedCards = [];
-            boardLocked = false;
-            nextPlayer();
+            card1.classList.remove("flipped"); // Remove flipped styling
+            card2.classList.remove("flipped"); // Remove flipped styling
+            card1.innerHTML = ''; // Hide the word on the card
+            card2.innerHTML = ''; // Hide the word on the card
+            flippedCards = []; // Reset flipped cards array
+            boardLocked = false; // Unlock the board
+            nextPlayer(); // Switch to the next player
         }, 1000);
     }
 }
 
-// Move to the next player
+// Move to the next player in turn
 function nextPlayer() {
-    currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-    updateScoreBoard();
+    currentPlayerIndex = (currentPlayerIndex + 1) % players.length; // Cycle to the next player
+    updateScoreBoard(); // Update the scoreboard to highlight the current player
 }
 
 // Restart the game
 function restartGame() {
-    document.getElementById("player-config-form").reset();
-    document.getElementById("image-form").reset();
-    document.getElementById("player-config-form").style.display = "block";
-    document.getElementById("image-form").style.display = "none";
+    document.getElementById("player-config").reset();
+    document.getElementById("word-setup").reset();
+    document.getElementById("player-config").style.display = "block";
+    document.getElementById("word-setup").style.display = "none";
     document.getElementById("game-container").style.display = "none";
     players = [];
     currentPlayerIndex = 0;
