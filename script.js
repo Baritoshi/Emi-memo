@@ -59,7 +59,8 @@ function startGame(event) {
     document.getElementById("word-form").style.display = "none";
     document.getElementById("game-container").style.display = "block";
 
-    updateScoreBoard();
+    updateScoreBoard(); // Initialize scoreboard and turn indicator
+    updateTurnIndicator(); // Show the current player's turn
 }
 
 function shuffle(array) {
@@ -84,12 +85,21 @@ function setupBoard() {
     });
 }
 
+// Update the scoreboard and turn indicator
 function updateScoreBoard() {
     const scoreboard = document.getElementById("score-board");
     scoreboard.innerHTML = players.map((player, index) => {
         const currentPlayerClass = index === currentPlayerIndex ? "current-player" : "";
         return `<div class="player-score ${currentPlayerClass}">${player.name}: ${player.score}</div>`;
     }).join("");
+
+    updateTurnIndicator(); // Update the turn indicator
+}
+
+// Update the current player's turn indicator
+function updateTurnIndicator() {
+    const turnIndicator = document.getElementById("turn-indicator");
+    turnIndicator.textContent = `Player's Turn: ${players[currentPlayerIndex].name}`;
 }
 
 function flipCard(card) {
@@ -135,8 +145,8 @@ function checkMatch() {
 }
 
 function nextPlayer() {
-    currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-    updateScoreBoard();
+    currentPlayerIndex = (currentPlayerIndex + 1) % players.length; // Cycle to the next player
+    updateTurnIndicator(); // Update the turn indicator
 }
 
 function restartGame() {
