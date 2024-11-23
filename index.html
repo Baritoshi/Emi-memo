@@ -9,23 +9,27 @@
 <body>
     <h1>Memory Card Game</h1>
 
-    <!-- Word Pair Form -->
-    <form id="word-form">
-        <h2>Enter Word Pairs</h2>
-        <textarea id="word-input" placeholder="Wpisz pary słówek rozdzielone przecinkiem" rows="10" cols="30" required></textarea>
+    <!-- Player Configuration Form -->
+    <form id="player-config-form">
+        <h2>Player Configuration</h2>
+        <label for="num-players">Number of Players:</label>
+        <input type="number" id="num-players" min="2" max="10" value="2" required>
+        <div id="player-names"></div>
+        <button type="button" id="generate-names">Generate Player Fields</button>
+        <button type="submit">Confirm Players</button>
+    </form>
+
+    <!-- Image URL Input Form -->
+    <form id="image-form" style="display:none;">
+        <h2>Enter Image URLs</h2>
+        <textarea id="image-input" placeholder="Enter image URLs, one per line" rows="10" cols="30" required></textarea>
         <button type="submit">Start Game</button>
     </form>
 
     <!-- Game Container -->
     <div id="game-container" style="display:none;">
         <!-- Score Table -->
-        <table id="score-table">
-            <tr>
-                <td id="player1-score">Player 1: 0</td>
-                <td id="current-player">Player 1's Turn</td>
-                <td id="player2-score">Player 2: 0</td>
-            </tr>
-        </table>
+        <div id="score-board"></div>
 
         <div id="game-board"></div>
         <button onclick="restartGame()">Restart Game</button>
