@@ -1,139 +1,157 @@
-let wordPairs = [];       // Array to store word pairs with unique IDs
-let currentPlayer = 1;    // Variable to track the current player (1 or 2)
+let players = [];         // Array to store player details (name and score)
+let currentPlayerIndex = 0; // Index of the current player
+let images = [];          // Array to store image URLs
 let flippedCards = [];    // Array to store the currently flipped cards for comparison
 let boardLocked = false;  // Boolean to lock the board during match checking
-let playerScores = [0, 0];// Array to hold scores for Player 1 and Player 2
 
-document.getElementById("word-form").addEventListener("submit", startGame);
+document.getElementById("player-config-form").addEventListener("submit", configurePlayers);
+document.getElementById("generate-names").addEventListener("click", generatePlayerFields);
+document.getElementById("image-form").addEventListener("submit", startGame);
 
-// Function to start the game, triggered on form submission
-function startGame(event) {
-    event.preventDefault(); // Prevent default form submission
-    const inputText = document.getElementById("word-input").value.trim(); // Get and trim the input
-    const lines = inputText.split("\n"); // Split input into lines
+// Function to generate input fields for player names
+function generatePlayerFields() {
+    const numPlayers = parseInt(document.getElementById("num-players").value);
+    const playerNamesDiv = document.getElementById("player-names");
+    playerNamesDiv.innerHTML = ''; // Clear existing fields
 
-    wordPairs = []; // Reset word pairs array
-
-    // Parse each line to extract word pairs
-    lines.forEach((line, index) => {
-        const words = line.split(",");
-        if (words.length === 2) {
-            const engWord = words[0].trim(); // English word
-            const plWord = words[1].trim();  // Polish word
-            const pairId = `pair-${index}`; // Unique ID for each pair
-            // Add both English and Polish words as separate cards with the same pair ID
-            wordPairs.push(
-                { id: pairId, text: engWord, lang: 'EN' },
-                { id: pairId, text: plWord, lang: 'PL' }
-            );
-        }
-    });
-
-    shuffle(wordPairs); // Shuffle word pairs
-    setupBoard(); // Setup the game board
-    document.getElementById("word-form").style.display = "none"; // Hide the form
-    document.getElementById("game-container").style.display = "block"; // Show the game container
-    updateTurnIndicator(); // Initialize turn indicator with player names and scores
-}
-
-// Function to update the turn indicator and scores in the table
-function updateTurnIndicator() {
-    // Update Player 1 and Player 2 scores
-    document.getElementById("player1-score").textContent = `Player 1: ${playerScores[0]}`;
-    document.getElementById("player2-score").textContent = `Player 2: ${playerScores[1]}`;
-
-    // Update the current player's turn in the center cell
-    document.getElementById("current-player").textContent = `Player ${currentPlayer}'s Turn`;
-}
-
-// Shuffle function using the Fisher-Yates algorithm
-function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+    for (let i = 1; i <= numPlayers; i++) {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.placeholder = `Player ${i} Name`;
+        input.required = true;
+        input.id = `player-${i}`;
+        playerNamesDiv.appendChild(input);
     }
 }
 
-// Setup the game board based on shuffled word pairs
+// Function to configure players and start the image input phase
+function configurePlayers(event) {
+    event.preventDefault();
+
+    players = []; // Reset players array
+    const numPlayers = parseInt(document.getElementById("num-players").value);
+
+    for (let i = 1; i <= numPlayers; i++) {
+        const playerName = document.getElementById(`player-${i}`).value.trim();
+        players.push({ name: playerName, score: 0 });
+    }
+
+    document.getElementById("player-config-form").style.display = "none"; // Hide the player config form
+    document.getElementById("image-form").style.display = "block"; // Show the image input form
+}
+
+// Function to start the game
+function startGame(event) {
+    event.preventDefault();
+    const inputText = document.getElementById("image-input").value.trim();
+    const lines = inputText.split("\n");
+
+    images = []; // Reset images array
+    lines.forEach((line) => {
+        const url = line.trim();
+        if (url) {
+            images.push({ id: url, src: url });
+            images.push({ id: url, src: url });
+        }
+    });
+
+    shuffle(images);
+    setupBoard();
+    document.getElementById("image-form").style.display = "none"; // Hide the image input form
+    document.getElementById("game-container").style.display = "block"; // Show the game container
+    updateScoreBoard();
+}
+
+// Function to shuffle the array of images
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+// Setup the game board based on shuffled images
 function setupBoard() {
     const board = document.getElementById("game-board");
-    board.innerHTML = ''; // Clear any existing cards
-    wordPairs.forEach((pair, index) => {
+    board.innerHTML = '';
+    images.forEach((image, index) => {
         const card = document.createElement("div");
-        card.classList.add("card"); // Add styling
-        card.dataset.index = index; // Unique index for the card
-        card.dataset.pairId = pair.id; // Unique pair ID
-        card.dataset.lang = pair.lang; // Store the language (EN or PL)
-        card.innerHTML = ''; // Initially keep the card blank
-        card.addEventListener("click", () => flipCard(card)); // Add click event listener
-        board.appendChild(card); // Add card to the game board
+        card.classList.add("card");
+        card.dataset.index = index;
+        card.dataset.id = image.id;
+
+        const imgElement = document.createElement("img");
+        imgElement.src = image.src;
+        card.appendChild(imgElement);
+
+        card.addEventListener("click", () => flipCard(card));
+        board.appendChild(card);
     });
+}
+
+// Function to update the score board
+function updateScoreBoard() {
+    const scoreBoard = document.getElementById("score-board");
+    scoreBoard.innerHTML = players.map((player, index) => {
+        const currentPlayerClass = index === currentPlayerIndex ? 'current-player' : '';
+        return `<div class="player-score ${currentPlayerClass}">${player.name}: ${player.score}</div>`;
+    }).join('');
 }
 
 // Handle card flipping logic
 function flipCard(card) {
-    if (boardLocked || card.classList.contains("flipped")) return; // Prevent flipping if locked or already flipped
+    if (boardLocked || card.classList.contains("flipped")) return;
 
-    card.classList.add("flipped"); // Add flipped class for styling
-    card.innerHTML = wordPairs[card.dataset.index].text; // Show the word on the card
-    flippedCards.push(card); // Add the card to the flippedCards array
+    card.classList.add("flipped");
+    flippedCards.push(card);
 
     if (flippedCards.length === 2) {
-        checkMatch(); // Check for a match if two cards are flipped
+        checkMatch();
     }
 }
 
-// Function to check if two flipped cards form a pair
+// Check if two flipped cards form a pair
 function checkMatch() {
-    const [card1, card2] = flippedCards; // Get the two flipped cards
-
-    // Check if the pair IDs match, meaning these two cards are a matching pair
-    const isMatch = card1.dataset.pairId === card2.dataset.pairId;
+    const [card1, card2] = flippedCards;
+    const isMatch = card1.dataset.id === card2.dataset.id;
 
     if (isMatch) {
-        // Award a point to the current player
-        playerScores[currentPlayer - 1]++;
-        updateTurnIndicator(); // Update the score display
+        players[currentPlayerIndex].score++;
+        updateScoreBoard();
 
-        // Hide matched cards after a short delay
         setTimeout(() => {
             card1.style.visibility = "hidden";
             card2.style.visibility = "hidden";
-            flippedCards = []; // Clear flipped cards array
-            // Check if the game is over by seeing if all pairs are matched
-            if (playerScores.reduce((a, b) => a + b) === wordPairs.length / 2) {
-                // Display game-over alert with final scores
-                setTimeout(() => alert(`Game Over! Final Scores - Player 1: ${playerScores[0]}, Player 2: ${playerScores[1]}`), 500);
+            flippedCards = [];
+            if (images.length / 2 === players.reduce((sum, player) => sum + player.score, 0)) {
+                alert("Game Over! Scores:\n" + players.map(p => `${p.name}: ${p.score}`).join("\n"));
             }
         }, 500);
     } else {
-        // Lock the board temporarily and unflip cards after a delay if no match is found
         boardLocked = true;
         setTimeout(() => {
-            card1.classList.remove("flipped"); // Remove flipped styling
-            card2.classList.remove("flipped"); // Remove flipped styling
-            card1.innerHTML = ''; // Hide the word on the card
-            card2.innerHTML = ''; // Hide the word on the card
-            flippedCards = []; // Reset flipped cards array
-            boardLocked = false; // Unlock the board
-            switchPlayer(); // Switch to the other player if there was no match
+            card1.classList.remove("flipped");
+            card2.classList.remove("flipped");
+            flippedCards = [];
+            boardLocked = false;
+            nextPlayer();
         }, 1000);
     }
 }
 
-// Function to switch the active player if a match was not found
-function switchPlayer() {
-    currentPlayer = currentPlayer === 1 ? 2 : 1; // Toggle between Player 1 and Player 2
-    updateTurnIndicator(); // Update the turn indicator with the new player
+// Move to the next player
+function nextPlayer() {
+    currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+    updateScoreBoard();
 }
 
-// Function to restart the game, resetting scores and displaying the form again
+// Restart the game
 function restartGame() {
-    document.getElementById("word-form").reset(); // Reset form fields
-    document.getElementById("word-input").value = ''; // Clear textarea
-    document.getElementById("word-form").style.display = "block"; // Show the form
-    document.getElementById("game-container").style.display = "none"; // Hide the game container
-    playerScores = [0, 0]; // Reset player scores
-    currentPlayer = 1; // Reset to Player 1's turn
-    updateTurnIndicator(); // Update turn indicator for reset game
+    document.getElementById("player-config-form").reset();
+    document.getElementById("image-form").reset();
+    document.getElementById("player-config-form").style.display = "block";
+    document.getElementById("image-form").style.display = "none";
+    document.getElementById("game-container").style.display = "none";
+    players = [];
+    currentPlayerIndex = 0;
 }
