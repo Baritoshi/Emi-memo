@@ -3,6 +3,8 @@ let players = [];
 let currentPlayerIndex = 0;
 let flippedCards = [];
 let boardLocked = false;
+let turnsTaken = 0; // Track the number of turns in single-player mode
+
 
 document.getElementById("player-config").addEventListener("submit", configurePlayers);
 document.getElementById("generate-players").addEventListener("click", generatePlayerFields);
@@ -22,6 +24,7 @@ function generatePlayerFields() {
         playerNamesDiv.appendChild(input);
     }
 }
+
 
 function configurePlayers(event) {
     event.preventDefault();
@@ -99,8 +102,14 @@ function updateScoreBoard() {
 // Update the current player's turn indicator
 function updateTurnIndicator() {
     const turnIndicator = document.getElementById("turn-indicator");
-    turnIndicator.textContent = `Player's Turn: ${players[currentPlayerIndex].name}`;
+
+    if (players.length === 1) {
+        turnIndicator.textContent = `Turns Taken: ${turnsTaken}`;
+    } else {
+        turnIndicator.textContent = `Player's Turn: ${players[currentPlayerIndex].name}`;
+    }
 }
+
 
 function flipCard(card) {
     if (boardLocked || card.classList.contains("flipped")) return;
@@ -127,7 +136,12 @@ function checkMatch() {
             flippedCards = [];
 
             if (players.reduce((sum, p) => sum + p.score, 0) === wordPairs.length / 2) {
-                alert(`Game Over! Scores:\n${players.map(p => `${p.name}: ${p.score}`).join("\n")}`);
+                if (players.length === 1) {
+                    alert(`Game Over! You completed the game in ${turnsTaken} turns.`);
+                } else {
+                    const scores = players.map(p => `${p.name}: ${p.score}`).join("\n");
+                    alert(`Game Over!\nScores:\n${scores}`);
+                }
             }
         }, 500);
     } else {
@@ -144,10 +158,19 @@ function checkMatch() {
     }
 }
 
+
 function nextPlayer() {
-    currentPlayerIndex = (currentPlayerIndex + 1) % players.length; // Cycle to the next player
-    updateTurnIndicator(); // Update the turn indicator
+    if (players.length === 1) {
+        // Single-player mode: Count the number of turns
+        turnsTaken++;
+        updateTurnIndicator(); // Update the turn indicator with the number of turns
+    } else {
+        // Multiplayer mode: Cycle to the next player
+        currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+        updateTurnIndicator();
+    }
 }
+
 
 function restartGame() {
     document.getElementById("player-config").reset();
@@ -157,4 +180,6 @@ function restartGame() {
     document.getElementById("game-container").style.display = "none";
     players = [];
     currentPlayerIndex = 0;
+    turnsTaken = 0; // Reset turns taken
 }
+
