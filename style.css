@@ -68,11 +68,39 @@ form button:hover {
 /* Game Board */
 #game-board {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     gap: 10px;
     margin-top: 20px;
-    max-width: 800px;
+    max-width: 100%;
 }
+
+/* Default grid layout for larger screens */
+@media (min-width: 1200px) {
+    #game-board {
+        grid-template-columns: repeat(8, minmax(100px, 1fr)); /* Up to 8 columns */
+    }
+}
+
+/* Medium screens */
+@media (min-width: 900px) and (max-width: 1199px) {
+    #game-board {
+        grid-template-columns: repeat(6, minmax(100px, 1fr)); /* Up to 6 columns */
+    }
+}
+
+/* Smaller screens */
+@media (min-width: 600px) and (max-width: 899px) {
+    #game-board {
+        grid-template-columns: repeat(4, minmax(100px, 1fr)); /* Up to 4 columns */
+    }
+}
+
+/* Mobile devices */
+@media (max-width: 599px) {
+    #game-board {
+        grid-template-columns: repeat(2, minmax(100px, 1fr)); /* Up to 2 columns */
+    }
+}
+
 
 /* Card Styling */
 .card {
