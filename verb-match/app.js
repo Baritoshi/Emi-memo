@@ -63,6 +63,7 @@ function setupDragAndDrop() {
     const draggables = document.querySelectorAll(".draggable");
     const slots = document.querySelectorAll(".slot");
 
+    // Handle mouse and touch events for drag start
     draggables.forEach(draggable => {
         draggable.addEventListener("dragstart", () => {
             draggable.classList.add("dragging");
@@ -71,15 +72,66 @@ function setupDragAndDrop() {
         draggable.addEventListener("dragend", () => {
             draggable.classList.remove("dragging");
         });
+
+        // Touch support
+        draggable.addEventListener("touchstart", handleTouchStart);
+        draggable.addEventListener("touchmove", handleTouchMove);
+        draggable.addEventListener("touchend", handleTouchEnd);
     });
 
+    // Allow slots to accept dragged items
     slots.forEach(slot => {
         slot.addEventListener("dragover", e => {
             e.preventDefault();
             const dragging = document.querySelector(".dragging");
             slot.appendChild(dragging);
         });
+
+        // Touch support
+        slot.addEventListener("touchend", handleTouchDrop);
     });
+}
+
+// Variables for touch support
+let touchTarget = null;
+
+// Touch event handlers
+function handleTouchStart(e) {
+    e.preventDefault();
+    touchTarget = e.target; // Store the dragged element
+    touchTarget.classList.add("dragging");
+}
+
+function handleTouchMove(e) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+
+    if (element && element.classList.contains("slot")) {
+        element.classList.add("hovered");
+    } else {
+        document.querySelectorAll(".slot.hovered").forEach(slot => {
+            slot.classList.remove("hovered");
+        });
+    }
+}
+
+function handleTouchEnd(e) {
+    e.preventDefault();
+    document.querySelectorAll(".slot.hovered").forEach(slot => {
+        slot.classList.remove("hovered");
+    });
+    touchTarget.classList.remove("dragging");
+    touchTarget = null;
+}
+
+function handleTouchDrop(e) {
+    e.preventDefault();
+    if (touchTarget && e.target.classList.contains("slot")) {
+        e.target.appendChild(touchTarget);
+        touchTarget.classList.remove("dragging");
+        touchTarget = null;
+    }
 }
 
 // Add Verbs from User Input
