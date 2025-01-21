@@ -93,10 +93,20 @@ button {
     transition: background-color 0.3s;
 }
 
+    /* Correct slot - change background color to green */
     .slot.correct {
-        background-color: #eaffea;
-        border-color: green;
+        background-color: #28a745; /* Green */
+        color: white;
+        border: none;
     }
+
+    /* Incorrect slot - change background color to red */
+    .slot.incorrect {
+        background-color: #dc3545; /* Red */
+        color: white;
+        border: none;
+    }
+
 
 .draggables {
     display: flex;
@@ -115,18 +125,24 @@ button {
     justify-content: center;
     align-items: center;
     font-size: 1em;
-    cursor: grab;
+    cursor: pointer;
     transition: transform 0.2s, background-color 0.3s;
-    position: relative;
 }
 
-    .draggable.correct {
-        background-color: green;
-        cursor: default;
+    .draggable.selected {
+        background-color: purple;
+        color: white;
     }
 
-    .draggable.dragging {
-        opacity: 0.7;
-        cursor: grabbing;
-        z-index: 1000;
+    /* Correct draggable item - green */
+    .draggable.correct {
+        background-color: #28a745; /* Green */
+        color: white;
     }
+
+    /* Incorrect draggable item - red */
+    .draggable.incorrect {
+        background-color: #dc3545; /* Red */
+        color: white;
+    }
+

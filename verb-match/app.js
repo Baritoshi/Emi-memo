@@ -10,6 +10,8 @@ const verbsInputField = document.getElementById("verbs-input");
 const gameSection = document.getElementById("game-section");
 const inputSection = document.getElementById("input-section");
 
+let selectedElement = null; // Stores the currently selected draggable element
+
 // Initialize the Game
 function initGame() {
     if (verbs.length === 0) {
@@ -19,6 +21,7 @@ function initGame() {
 
     targetsContainer.innerHTML = "";
     draggablesContainer.innerHTML = "";
+    selectedElement = null;
 
     const shuffledVerbs = shuffle([...verbs]);
 
@@ -49,99 +52,37 @@ function initGame() {
     draggables.forEach(item => {
         const draggable = document.createElement("div");
         draggable.classList.add("draggable");
-        draggable.draggable = true;
         draggable.dataset.matchId = item.matchId;
         draggable.textContent = item.text;
+        draggable.addEventListener("click", handleDraggableClick);
         draggablesContainer.appendChild(draggable);
     });
 
-    setupDragAndDrop();
+    setupSlots();
 }
 
-// Drag-and-Drop Logic
-function setupDragAndDrop() {
-    const draggables = document.querySelectorAll(".draggable");
+// Slot Interaction
+function setupSlots() {
     const slots = document.querySelectorAll(".slot");
 
-    // Handle mouse and touch events for drag start
-    draggables.forEach(draggable => {
-        draggable.addEventListener("dragstart", () => {
-            draggable.classList.add("dragging");
-        });
-
-        draggable.addEventListener("dragend", () => {
-            draggable.classList.remove("dragging");
-        });
-
-        // Touch support
-        draggable.addEventListener("touchstart", handleTouchStart);
-        draggable.addEventListener("touchmove", handleTouchMove);
-        draggable.addEventListener("touchend", handleTouchEnd);
-    });
-
-    // Allow slots to accept dragged items
     slots.forEach(slot => {
-        slot.addEventListener("dragover", e => {
-            e.preventDefault();
-            const dragging = document.querySelector(".dragging");
-            slot.appendChild(dragging);
+        slot.addEventListener("click", () => {
+            if (selectedElement) {
+                slot.appendChild(selectedElement); // Allow any draggable to be placed
+                selectedElement.classList.remove("selected");
+                selectedElement = null;
+            }
         });
-
-        // Touch support
-        slot.addEventListener("touchend", handleTouchDrop);
     });
 }
 
-// Variables for touch support
-let touchTarget = null;
-
-// Touch event handlers
-function handleTouchStart(e) {
-    e.preventDefault();
-    touchTarget = e.target;
-    touchTarget.classList.add("dragging");
-
-    const touch = e.touches[0];
-    touchTarget.style.position = "absolute";
-    touchTarget.style.zIndex = "1000";
-    touchTarget.style.left = `${touch.clientX - touchTarget.offsetWidth / 2}px`;
-    touchTarget.style.top = `${touch.clientY - touchTarget.offsetHeight / 2}px`;
-}
-
-function handleTouchMove(e) {
-    e.preventDefault();
-
-    if (touchTarget) {
-        const touch = e.touches[0];
-        touchTarget.style.left = `${touch.clientX - touchTarget.offsetWidth / 2}px`;
-        touchTarget.style.top = `${touch.clientY - touchTarget.offsetHeight / 2}px`;
+// Draggable Click Interaction
+function handleDraggableClick(e) {
+    if (selectedElement) {
+        selectedElement.classList.remove("selected"); // Deselect previous element
     }
-}
-
-function handleTouchEnd(e) {
-    e.preventDefault();
-
-    if (touchTarget) {
-        touchTarget.classList.remove("dragging");
-        touchTarget.style.position = "";
-        touchTarget.style.zIndex = "";
-        touchTarget.style.left = "";
-        touchTarget.style.top = "";
-        touchTarget = null;
-    }
-}
-
-function handleTouchDrop(e) {
-    e.preventDefault();
-    if (touchTarget && e.target.classList.contains("slot")) {
-        e.target.appendChild(touchTarget);
-        touchTarget.classList.remove("dragging");
-        touchTarget.style.position = "";
-        touchTarget.style.zIndex = "";
-        touchTarget.style.left = "";
-        touchTarget.style.top = "";
-        touchTarget = null;
-    }
+    selectedElement = e.target; // Set the new selected element
+    selectedElement.classList.add("selected");
 }
 
 // Add Verbs from User Input
@@ -195,10 +136,11 @@ checkAnswersButton.addEventListener("click", () => {
             const matchId = `${slot.parentElement.dataset.infinitive}-${slot.dataset.slot}`;
 
             if (dragging.dataset.matchId === matchId) {
-                dragging.classList.add("correct");
+                dragging.classList.add("correct"); // Turn green
+                dragging.classList.remove("incorrect");
             } else {
                 dragging.classList.remove("correct");
-                draggablesContainer.appendChild(dragging);
+                draggablesContainer.appendChild(dragging); // Move item back to pool
                 allCorrect = false;
             }
         } else {
@@ -208,6 +150,8 @@ checkAnswersButton.addEventListener("click", () => {
 
     if (allCorrect) {
         alert("Well done! You completed the exercise.");
+    } else {
+        alert("Some items are incorrect. Incorrect items were reset.");
     }
 });
 
