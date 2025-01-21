@@ -98,31 +98,37 @@ let touchTarget = null;
 // Touch event handlers
 function handleTouchStart(e) {
     e.preventDefault();
-    touchTarget = e.target; // Store the dragged element
+    touchTarget = e.target;
     touchTarget.classList.add("dragging");
+
+    const touch = e.touches[0];
+    touchTarget.style.position = "absolute";
+    touchTarget.style.zIndex = "1000";
+    touchTarget.style.left = `${touch.clientX - touchTarget.offsetWidth / 2}px`;
+    touchTarget.style.top = `${touch.clientY - touchTarget.offsetHeight / 2}px`;
 }
 
 function handleTouchMove(e) {
     e.preventDefault();
-    const touch = e.touches[0];
-    const element = document.elementFromPoint(touch.clientX, touch.clientY);
 
-    if (element && element.classList.contains("slot")) {
-        element.classList.add("hovered");
-    } else {
-        document.querySelectorAll(".slot.hovered").forEach(slot => {
-            slot.classList.remove("hovered");
-        });
+    if (touchTarget) {
+        const touch = e.touches[0];
+        touchTarget.style.left = `${touch.clientX - touchTarget.offsetWidth / 2}px`;
+        touchTarget.style.top = `${touch.clientY - touchTarget.offsetHeight / 2}px`;
     }
 }
 
 function handleTouchEnd(e) {
     e.preventDefault();
-    document.querySelectorAll(".slot.hovered").forEach(slot => {
-        slot.classList.remove("hovered");
-    });
-    touchTarget.classList.remove("dragging");
-    touchTarget = null;
+
+    if (touchTarget) {
+        touchTarget.classList.remove("dragging");
+        touchTarget.style.position = "";
+        touchTarget.style.zIndex = "";
+        touchTarget.style.left = "";
+        touchTarget.style.top = "";
+        touchTarget = null;
+    }
 }
 
 function handleTouchDrop(e) {
@@ -130,6 +136,10 @@ function handleTouchDrop(e) {
     if (touchTarget && e.target.classList.contains("slot")) {
         e.target.appendChild(touchTarget);
         touchTarget.classList.remove("dragging");
+        touchTarget.style.position = "";
+        touchTarget.style.zIndex = "";
+        touchTarget.style.left = "";
+        touchTarget.style.top = "";
         touchTarget = null;
     }
 }
