@@ -1,30 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="iso-8859-2">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verb Matcher</title>
+    <title>Verb Drag-and-Drop Game</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>Verb Matcher</h1>
-        <p>Match the three forms of the verb and its Polish translation!</p>
-        <div id="game-board" class="game-board"></div>
+        <h1>Verb Drag-and-Drop Game</h1>
+        <p>Add your verbs, then drag the correct forms to their matching slots!</p>
 
-        <div class="score">
-            <p>Score: <span id="score">0</span></p>
-        </div>
-
-        <button id="restart-game">Restart Game</button>
-
-        <div id="options-menu">
+        <!-- Input Form Section -->
+        <div id="input-section">
             <h2>Add Verbs</h2>
             <form id="add-verbs-form">
-                <label for="verbs-input">Enter verbs (format: infinitive,past,past participle,translation):</label><br>
-                <textarea id="verbs-input" rows="5" placeholder="e.g., go,went,gone,ić"></textarea><br>
-                <button type="submit">Save Verbs</button>
+                <textarea id="verbs-input" placeholder="Format: infinitive,past,participle,translation (one per line)"></textarea>
+                <button type="submit">Add Verbs</button>
             </form>
+        </div>
+
+        <!-- Game Section -->
+        <div id="game-section" style="display: none;">
+            <div class="game">
+                <div id="targets" class="targets"></div>
+                <div id="draggables" class="draggables"></div>
+            </div>
+
+            <div class="controls">
+                <button id="check-answers">Check Answers</button>
+            </div>
+
+            <button id="restart-game">Restart Game</button>
         </div>
     </div>
     <script src="app.js"></script>

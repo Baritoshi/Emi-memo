@@ -1,117 +1,109 @@
-let gameBoard = document.getElementById("game-board");
-let scoreDisplay = document.getElementById("score");
-let restartButton = document.getElementById("restart-game");
-let verbsInputForm = document.getElementById("add-verbs-form");
-let verbsInputField = document.getElementById("verbs-input");
+let verbs = [];
 
-let cards = [];
-let flippedCards = [];
-let score = 0;
+// DOM Elements
+const targetsContainer = document.getElementById("targets");
+const draggablesContainer = document.getElementById("draggables");
+const checkAnswersButton = document.getElementById("check-answers");
+const restartButton = document.getElementById("restart-game");
+const addVerbsForm = document.getElementById("add-verbs-form");
+const verbsInputField = document.getElementById("verbs-input");
+const gameSection = document.getElementById("game-section");
+const inputSection = document.getElementById("input-section");
 
-let verbs = []; // Start with an empty verb list
-
-// Initialize the game
+// Initialize the Game
 function initGame() {
     if (verbs.length === 0) {
-        alert("Please add some verbs to start the game!");
+        alert("No verbs available. Please add verbs first.");
         return;
     }
 
-    score = 0;
-    scoreDisplay.textContent = score;
-    gameBoard.innerHTML = "";
-    flippedCards = [];
+    targetsContainer.innerHTML = "";
+    draggablesContainer.innerHTML = "";
 
-    // Create shuffled cards
-    cards = shuffle(
-        verbs.flatMap(verb => [
-            { text: verb.infinitive, type: "infinitive", matchId: verb.infinitive },
-            { text: verb.past, type: "past", matchId: verb.infinitive },
-            { text: verb.participle, type: "participle", matchId: verb.infinitive },
-            { text: verb.translation, type: "translation", matchId: verb.infinitive }
+    const shuffledVerbs = shuffle([...verbs]);
+
+    // Create targets
+    shuffledVerbs.forEach(verb => {
+        const target = document.createElement("div");
+        target.classList.add("target");
+        target.dataset.infinitive = verb.infinitive;
+
+        target.innerHTML = `
+            <h3>${verb.infinitive}</h3>
+            <div class="slot" data-slot="past"></div>
+            <div class="slot" data-slot="participle"></div>
+            <div class="slot" data-slot="translation"></div>
+        `;
+        targetsContainer.appendChild(target);
+    });
+
+    // Create draggable options
+    const draggables = shuffle(
+        shuffledVerbs.flatMap(verb => [
+            { text: verb.past, matchId: `${verb.infinitive}-past` },
+            { text: verb.participle, matchId: `${verb.infinitive}-participle` },
+            { text: verb.translation, matchId: `${verb.infinitive}-translation` }
         ])
     );
 
-    // Render cards
-    cards.forEach((card, index) => {
-        const cardElement = document.createElement("div");
-        cardElement.classList.add("card");
-        cardElement.dataset.index = index;
-        cardElement.textContent = card.text;
+    draggables.forEach(item => {
+        const draggable = document.createElement("div");
+        draggable.classList.add("draggable");
+        draggable.draggable = true;
+        draggable.dataset.matchId = item.matchId;
+        draggable.textContent = item.text;
+        draggablesContainer.appendChild(draggable);
+    });
 
-        cardElement.addEventListener("click", () => flipCard(index));
-        gameBoard.appendChild(cardElement);
+    setupDragAndDrop();
+}
+
+// Drag-and-Drop Logic
+function setupDragAndDrop() {
+    const draggables = document.querySelectorAll(".draggable");
+    const slots = document.querySelectorAll(".slot");
+
+    draggables.forEach(draggable => {
+        draggable.addEventListener("dragstart", () => {
+            draggable.classList.add("dragging");
+        });
+
+        draggable.addEventListener("dragend", () => {
+            draggable.classList.remove("dragging");
+        });
+    });
+
+    slots.forEach(slot => {
+        slot.addEventListener("dragover", e => {
+            e.preventDefault();
+            const dragging = document.querySelector(".dragging");
+            slot.appendChild(dragging);
+        });
     });
 }
 
-// Shuffle the cards
-function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-}
-
-// Flip a card
-function flipCard(index) {
-    const cardElement = gameBoard.children[index];
-    if (cardElement.classList.contains("flipped") || cardElement.classList.contains("hidden")) return;
-
-    cardElement.classList.add("flipped");
-    flippedCards.push({ ...cards[index], index });
-
-    if (flippedCards.length === 4) {
-        checkMatch();
-    }
-}
-
-// Check if the flipped cards form a match
-function checkMatch() {
-    const [card1, card2, card3, card4] = flippedCards;
-
-    if (
-        card1.matchId === card2.matchId &&
-        card1.matchId === card3.matchId &&
-        card1.matchId === card4.matchId
-    ) {
-        // Correct match
-        score += 5;
-        flippedCards.forEach(card => gameBoard.children[card.index].classList.add("hidden"));
-    } else {
-        // Incorrect match
-        score -= 2;
-        setTimeout(() => {
-            flippedCards.forEach(card => gameBoard.children[card.index].classList.remove("flipped"));
-        }, 1000);
-    }
-
-    flippedCards = [];
-    scoreDisplay.textContent = score;
-
-    // Check if the game is over
-    if ([...gameBoard.children].every(card => card.classList.contains("hidden"))) {
-        alert("Congratulations! Your final score is: " + score);
-    }
-}
-
-// Add verbs from user input
-verbsInputForm.addEventListener("submit", (e) => {
+// Add Verbs from User Input
+addVerbsForm.addEventListener("submit", e => {
     e.preventDefault();
 
     const rawInput = verbsInputField.value.trim();
     if (!rawInput) {
-        alert("Please enter some verbs!");
+        alert("Please enter at least one verb!");
         return;
     }
 
     const newVerbs = rawInput.split("\n").map(line => {
         const [infinitive, past, participle, translation] = line.split(",");
         if (!infinitive || !past || !participle || !translation) {
-            alert("Each line must have 4 parts: infinitive, past, past participle, translation.");
+            alert("Each line must have 4 parts: infinitive, past, participle, translation.");
             return null;
         }
-        return { infinitive: infinitive.trim(), past: past.trim(), participle: participle.trim(), translation: translation.trim() };
+        return {
+            infinitive: infinitive.trim(),
+            past: past.trim(),
+            participle: participle.trim(),
+            translation: translation.trim(),
+        };
     }).filter(Boolean);
 
     if (newVerbs.length === 0) {
@@ -120,15 +112,56 @@ verbsInputForm.addEventListener("submit", (e) => {
     }
 
     verbs = [...verbs, ...newVerbs];
-    verbsInputField.value = ""; // Clear the input field
+    verbsInputField.value = ""; // Clear input field
     alert(`${newVerbs.length} verbs added successfully!`);
 
-    // Restart the game with new verbs
+    // Show game section and start game
+    inputSection.style.display = "none";
+    gameSection.style.display = "block";
     initGame();
 });
 
-// Restart the game
-restartButton.addEventListener("click", initGame);
+// Check Answers
+checkAnswersButton.addEventListener("click", () => {
+    const slots = document.querySelectorAll(".slot");
+    let allCorrect = true;
 
-// Start the game (empty initially)
-initGame();
+    slots.forEach(slot => {
+        const dragging = slot.firstChild;
+
+        if (dragging) {
+            const matchId = `${slot.parentElement.dataset.infinitive}-${slot.dataset.slot}`;
+
+            if (dragging.dataset.matchId === matchId) {
+                dragging.classList.add("correct");
+            } else {
+                dragging.classList.remove("correct");
+                draggablesContainer.appendChild(dragging);
+                allCorrect = false;
+            }
+        } else {
+            allCorrect = false;
+        }
+    });
+
+    if (allCorrect) {
+        alert("Well done! You completed the exercise.");
+    }
+});
+
+// Shuffle Array
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+// Restart Game
+restartButton.addEventListener("click", () => {
+    initGame();
+});
+
+// Start the Game (wait for user input)
+gameSection.style.display = "none";

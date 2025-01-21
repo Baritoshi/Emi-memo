@@ -1,0 +1,105 @@
+/* General Body Styling */
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f4f4f9;
+    margin: 0;
+    padding: 20px;
+}
+
+/* Main Container */
+.container {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Text Area */
+textarea {
+    width: 90%;
+    padding: 10px;
+    font-size: 1em;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    resize: none;
+}
+
+/* Buttons */
+button {
+    padding: 10px 20px;
+    font-size: 1em;
+    color: white;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+/* Game Board */
+.game-board {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Responsive layout */
+    gap: 10px;
+    justify-content: center;
+    margin: 20px auto;
+}
+
+/* Memory Cards */
+.card {
+    width: 100px;
+    height: 150px;
+    background-color: #007bff;
+    color: white;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+    .card.selected {
+        background-color: green; /* Highlight selected cards */
+        color: white;
+    }
+
+    .card.hidden {
+        visibility: hidden; /* Hide matched cards */
+        pointer-events: none;
+        opacity: 0; /* Smooth transition to hidden */
+        transition: opacity 0.3s ease;
+    }
+
+/* Score Display */
+.score {
+    font-size: 1.5em;
+    margin-top: 20px;
+}
+
+/* Input Section */
+#input-section {
+    text-align: left;
+    background: #f9f9f9;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    .card {
+        width: 80px;
+        height: 120px;
+        font-size: 1em;
+    }
+}
