@@ -1,4 +1,4 @@
-/* General Body Styling */
+/* General Styling */
 body {
     font-family: Arial, sans-serif;
     text-align: center;
@@ -7,7 +7,6 @@ body {
     padding: 20px;
 }
 
-/* Main Container */
 .container {
     max-width: 800px;
     margin: auto;
@@ -51,7 +50,7 @@ button {
         background-color: #0056b3;
     }
 
-/* Game Section */
+/* Game Layout */
 .game {
     display: flex;
     flex-direction: column;
@@ -80,6 +79,7 @@ button {
         font-size: 1.1em;
     }
 
+/* Slots for Draggable Placement */
 .slot {
     width: 150px;
     height: 40px;
@@ -93,21 +93,7 @@ button {
     transition: background-color 0.3s;
 }
 
-    /* Correct slot - change background color to green */
-    .slot.correct {
-        background-color: #28a745; /* Green */
-        color: white;
-        border: none;
-    }
-
-    /* Incorrect slot - change background color to red */
-    .slot.incorrect {
-        background-color: #dc3545; /* Red */
-        color: white;
-        border: none;
-    }
-
-
+/* Draggable Items */
 .draggables {
     display: flex;
     flex-wrap: wrap;
@@ -129,20 +115,18 @@ button {
     transition: transform 0.2s, background-color 0.3s;
 }
 
+    /* Feedback Styles for Correct and Incorrect Matches */
     .draggable.selected {
         background-color: purple;
         color: white;
     }
 
-    /* Correct draggable item - green */
     .draggable.correct {
         background-color: #28a745; /* Green */
         color: white;
     }
 
-    /* Incorrect draggable item - red */
     .draggable.incorrect {
         background-color: #dc3545; /* Red */
         color: white;
     }
-
