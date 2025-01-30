@@ -33,9 +33,9 @@ function initGame() {
 
         target.innerHTML = `
             <h3>${verb.infinitive}</h3>
-            <div class="slot" data-slot="past"></div>
-            <div class="slot" data-slot="participle"></div>
-            <div class="slot" data-slot="translation"></div>
+            <div class="slot" data-slot="past" data-answer="${verb.past}"></div>
+            <div class="slot" data-slot="participle" data-answer="${verb.participle}"></div>
+            <div class="slot" data-slot="translation" data-answer="${verb.translation}"></div>
         `;
         targetsContainer.appendChild(target);
     });
@@ -43,16 +43,16 @@ function initGame() {
     // Create draggable options
     const draggables = shuffle(
         shuffledVerbs.flatMap(verb => [
-            { text: verb.past, matchId: `${verb.infinitive}-past` },
-            { text: verb.participle, matchId: `${verb.infinitive}-participle` },
-            { text: verb.translation, matchId: `${verb.infinitive}-translation` }
+            { text: verb.past, matchId: verb.past }, // Match by text
+            { text: verb.participle, matchId: verb.participle }, // Match by text
+            { text: verb.translation, matchId: verb.translation } // Match by text
         ])
     );
 
     draggables.forEach(item => {
         const draggable = document.createElement("div");
         draggable.classList.add("draggable");
-        draggable.dataset.matchId = item.matchId;
+        draggable.dataset.matchId = item.matchId; // The word itself
         draggable.textContent = item.text;
         draggable.addEventListener("click", handleDraggableClick);
         draggablesContainer.appendChild(draggable);
@@ -133,13 +133,15 @@ checkAnswersButton.addEventListener("click", () => {
         const dragging = slot.firstChild;
 
         if (dragging) {
-            const matchId = `${slot.parentElement.dataset.infinitive}-${slot.dataset.slot}`;
+            const expectedText = slot.dataset.answer.trim().toLowerCase(); // Get expected word text
+            const actualText = dragging.textContent.trim().toLowerCase(); // Get user-placed word
 
-            if (dragging.dataset.matchId === matchId) {
+            if (actualText === expectedText) {
                 dragging.classList.add("correct"); // Turn green
                 dragging.classList.remove("incorrect");
             } else {
                 dragging.classList.remove("correct");
+                dragging.classList.add("incorrect"); // Turn red
                 draggablesContainer.appendChild(dragging); // Move item back to pool
                 allCorrect = false;
             }
