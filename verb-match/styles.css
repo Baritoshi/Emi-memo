@@ -45,13 +45,17 @@ button {
         background-color: #0056b3;
     }
 
-/* Lives Display */
+/* Status Bar (Lives + Score) */
+.status-bar {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+}
+
 .lives-container {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 10px;
-    margin-bottom: 10px;
 }
 
 #hearts-container {
@@ -64,11 +68,24 @@ button {
     margin: 0 5px;
 }
 
-Target Slots / .targets { / Each verb target in its own row
-display: flex; flex-direction: column; gap: 15px; margin-top: 20px;
+.score-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 1.2em;
 }
 
-.target { /* Slots arranged horizontally for each verb */
+/* Target Slots */
+.targets {
+    /* Each verb target in its own row */
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.target {
+    /* Slots arranged horizontally for each verb */
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -82,11 +99,12 @@ display: flex; flex-direction: column; gap: 15px; margin-top: 20px;
 
     .target h3 {
         margin: 0;
-        font-size: 1.1em; /* Optional margin between verb label and slots */
+        font-size: 1.1em;
         margin-right: 10px;
     }
 
-/* Answer Slots */ .slot {
+/* Answer Slots */
+.slot {
     width: 150px;
     height: 40px;
     border: 2px dashed #007bff;
@@ -99,7 +117,8 @@ display: flex; flex-direction: column; gap: 15px; margin-top: 20px;
     cursor: pointer;
 }
 
-/* Draggable Words */ .draggables {
+/* Draggable Words */
+.draggables {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
@@ -120,13 +139,23 @@ display: flex; flex-direction: column; gap: 15px; margin-top: 20px;
     cursor: pointer;
 }
 
-    /* Selected Word */ .draggable.selected {
+    /* Selected Word */
+    .draggable.selected {
         background-color: purple;
     }
 
-    /* Feedback for reinserted incorrect word */ .draggable.incorrect {
+    /* Feedback for reinserted incorrect word */
+    .draggable.incorrect {
         background-color: #dc3545;
     }
 
-/* If you want to visually highlight correct/incorrect slots: / .slot-correct { border-color: #28a745 !important; / Green border / background-color: #e1f8e1; / Light green background / } .slot-incorrect { border-color: #dc3545 !important; / Red border / background-color: #f9e1e1; / Light red background */
+/* Correct/Incorrect slot highlights */
+.slot-correct {
+    border-color: #28a745 !important; /* Green border */
+    background-color: #e1f8e1; /* Light green background */
+}
+
+.slot-incorrect {
+    border-color: #dc3545 !important; /* Red border */
+    background-color: #f9e1e1; /* Light red background */
 }
