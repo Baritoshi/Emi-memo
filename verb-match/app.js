@@ -156,25 +156,110 @@ function initGame() {
 }
 
 // Handle Form Submission
-addVerbsForm.addEventListener("submit", e => {
+// ...
+
+addVerbsForm.addEventListener("submit", (e) => {
     e.preventDefault();
 
-    // Convert each line into an object with 4 properties, trimming spaces
-    verbs = verbsInputField.value.trim().split("\n").map(line => {
-        const parts = line.split(",").map(item => item.trim());
-        const [inf, past, part, trans] = parts;
-        return {
-            infinitive: inf || "",
-            past: past || "",
-            participle: part || "",
-            translation: trans || ""
-        };
-    });
+    // Split the input into lines
+    const lines = verbsInputField.value.trim().split("\n");
 
-    // Hide input section, start the game
+    // We'll use a temporary array to store new valid verbs
+    const newVerbsArray = [];
+
+    // A set to check duplicates by a "signature"
+    // (concatenating all 4 forms in lowercase)
+    const existingSignatures = new Set();
+
+    // If you're appending new verbs each time,
+    // you might want to also include existing verbs in the set so you don’t add duplicates
+    // between multiple submissions. For example:
+    //   verbs.forEach(v => {
+    //     const sig = createSignature(v.infinitive, v.past, v.participle, v.translation);
+    //     existingSignatures.add(sig);
+    //   });
+    // 
+    // If you prefer clearing old verbs when the user re-submits, skip that step.
+
+    // Go line by line
+    for (const line of lines) {
+        const trimmedLine = line.trim();
+
+        // Skip if line is empty
+        if (!trimmedLine) {
+            continue;
+        }
+
+        // Split into parts
+        const parts = trimmedLine.split(",").map((p) => p.trim());
+
+        // Check if we have exactly 4 items: [inf, past, part, trans]
+        if (parts.length !== 4) {
+            // Optionally, show a warning or simply skip
+            //alert(`Skipping invalid line (must have 4 parts): "${line}"`);
+            continue;
+        }
+
+        const [inf, past, part, trans] = parts;
+
+        // Skip if any of the parts is empty
+        if (!inf || !past || !part || !trans) {
+            //alert(`Skipping line with blank fields: "${line}"`);
+            continue;
+        }
+
+        // Build a "signature" to detect duplicates
+        const signature = createSignature(inf, past, part, trans);
+
+        // Check if this verb set was already added
+        if (existingSignatures.has(signature)) {
+            //alert(`Duplicate verb entry found. Skipping: "${line}"`);
+            continue;
+        }
+
+        // If it’s new, add to the temporary array and mark signature
+        existingSignatures.add(signature);
+        newVerbsArray.push({
+            infinitive: inf,
+            past: past,
+            participle: part,
+            translation: trans,
+        });
+    }
+
+    // If no valid lines, optionally warn the user
+    if (newVerbsArray.length === 0) {
+        alert("No valid verbs added. Please check your input.");
+        return;
+    }
+
+    // Now either append these to the existing 'verbs' array or replace entirely
+    // If you want to REPLACE the entire list:
+    verbs = newVerbsArray;
+
+    // Or if you want to APPEND to existing:
+    // verbs = [...verbs, ...newVerbsArray];
+
+    // Clear the input and hide the input section
+    verbsInputField.value = "";
     inputSection.style.display = "none";
+
+    // Start or re-init the game
     initGame();
 });
+
+// Helper function to create a "signature" for each verb set
+function createSignature(inf, past, part, trans) {
+    return [
+        inf.toLowerCase(),
+        past.toLowerCase(),
+        part.toLowerCase(),
+        trans.toLowerCase(),
+    ].join("-");
+}
+
+// ...
+
 
 // Check Answers
 checkAnswersButton.addEventListener("click", () => {
