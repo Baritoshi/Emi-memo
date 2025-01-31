@@ -1,175 +1,263 @@
+
+// Global Variables
 let verbs = [];
+let lives = 5;
+let selectedWord = null; // Currently selected draggable word
 
 // DOM Elements
 const targetsContainer = document.getElementById("targets");
 const draggablesContainer = document.getElementById("draggables");
-const checkAnswersButton = document.getElementById("check-answers");
-const restartButton = document.getElementById("restart-game");
 const addVerbsForm = document.getElementById("add-verbs-form");
 const verbsInputField = document.getElementById("verbs-input");
 const gameSection = document.getElementById("game-section");
 const inputSection = document.getElementById("input-section");
+const livesDisplay = document.getElementById("lives-display");
+const heartsContainer = document.getElementById("hearts-container");
+const checkAnswersButton = document.getElementById("check-answers");
+const restartGameButton = document.getElementById("restart-game");
 
-let selectedElement = null; // Stores the currently selected draggable element
+// Update Lives Display
+function updateLivesDisplay() {
+  livesDisplay.textContent = lives;
 
-// Initialize the Game
+  // Clear existing hearts
+  heartsContainer.innerHTML = "";
+  for (let i = 0; i < lives; i++) {
+    const heart = document.createElement("img");
+    heart.src = "https://img.icons8.com/emoji/48/heart-suit.png"; // Example heart icon
+    heart.classList.add("heart-icon");
+    heartsContainer.appendChild(heart);
+  }
+}
+
+// Simple shuffle function (Fisher-Yates)
+function shuffle(array) {
+  let currentIndex = array.length, randomIndex;
+  while (currentIndex !== 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex]
+    ];
+  }
+  return array;
+}
+
+// Initialize Game
 function initGame() {
-    if (verbs.length === 0) {
-        alert("No verbs available. Please add verbs first.");
-        return;
-    }
+  if (verbs.length === 0) {
+    alert("No verbs available. Please add verbs first.");
+    return;
+  }
 
-    targetsContainer.innerHTML = "";
-    draggablesContainer.innerHTML = "";
-    selectedElement = null;
+  // Reset containers
+  targetsContainer.innerHTML = "";
+  draggablesContainer.innerHTML = "";
+  lives = 5;
+  updateLivesDisplay();
 
-    const shuffledVerbs = shuffle([...verbs]);
+  // Create target slots for each verb
+  verbs.forEach(verb => {
+    const target = document.createElement("div");
+    target.classList.add("target");
 
-    // Create targets
-    shuffledVerbs.forEach(verb => {
-        const target = document.createElement("div");
-        target.classList.add("target");
-        target.dataset.infinitive = verb.infinitive;
+    // Show the infinitive as a label, with Past, Participle, Translation as slots
+      target.innerHTML = `
+        <h3>${verb.infinitive}</h3>
+        <div class="slot" data-answer="${verb.past.trim().toLowerCase()}"></div>
+        <div class="slot" data-answer="${verb.participle.trim().toLowerCase()}"></div>
+        <div class="slot" data-answer="${verb.translation.trim().toLowerCase()}"></div>
+`;
+      targetsContainer.appendChild(target);
 
-        target.innerHTML = `
-            <h3>${verb.infinitive}</h3>
-            <div class="slot" data-slot="past" data-answer="${verb.past}"></div>
-            <div class="slot" data-slot="participle" data-answer="${verb.participle}"></div>
-            <div class="slot" data-slot="translation" data-answer="${verb.translation}"></div>
-        `;
-        targetsContainer.appendChild(target);
-    });
+  });
 
-    // Create draggable options
-    const draggables = shuffle(
-        shuffledVerbs.flatMap(verb => [
-            { text: verb.past, matchId: verb.past }, // Match by text
-            { text: verb.participle, matchId: verb.participle }, // Match by text
-            { text: verb.translation, matchId: verb.translation } // Match by text
-        ])
-    );
+  // Gather all the words you want to randomize (past, participle, translation)
+  let allWords = verbs.flatMap(v => [
+    v.past.trim(), 
+    v.participle.trim(), 
+    v.translation.trim()
+  ]);
 
-    draggables.forEach(item => {
-        const draggable = document.createElement("div");
-        draggable.classList.add("draggable");
-        draggable.dataset.matchId = item.matchId; // The word itself
-        draggable.textContent = item.text;
-        draggable.addEventListener("click", handleDraggableClick);
-        draggablesContainer.appendChild(draggable);
-    });
+  // Shuffle the words
+  allWords = shuffle(allWords);
 
-    setupSlots();
-}
+  // Create draggable elements
+  allWords.forEach(word => {
+    const draggable = document.createElement("div");
+    draggable.classList.add("draggable");
+    draggable.textContent = word;
+    draggablesContainer.appendChild(draggable);
 
-// Slot Interaction
-function setupSlots() {
-    const slots = document.querySelectorAll(".slot");
-
-    slots.forEach(slot => {
-        slot.addEventListener("click", () => {
-            if (selectedElement) {
-                slot.appendChild(selectedElement); // Allow any draggable to be placed
-                selectedElement.classList.remove("selected");
-                selectedElement = null;
-            }
-        });
-    });
-}
-
-// Draggable Click Interaction
-function handleDraggableClick(e) {
-    if (selectedElement) {
-        selectedElement.classList.remove("selected"); // Deselect previous element
-    }
-    selectedElement = e.target; // Set the new selected element
-    selectedElement.classList.add("selected");
-}
-
-// Add Verbs from User Input
-addVerbsForm.addEventListener("submit", e => {
-    e.preventDefault();
-
-    const rawInput = verbsInputField.value.trim();
-    if (!rawInput) {
-        alert("Please enter at least one verb!");
-        return;
-    }
-
-    const newVerbs = rawInput.split("\n").map(line => {
-        const [infinitive, past, participle, translation] = line.split(",");
-        if (!infinitive || !past || !participle || !translation) {
-            alert("Each line must have 4 parts: infinitive, past, participle, translation.");
-            return null;
+    // Click-to-select logic
+    draggable.addEventListener("click", () => {
+      // If this word is already selected, deselect it
+      if (selectedWord === draggable) {
+        draggable.classList.remove("selected");
+        selectedWord = null;
+      } else {
+        // Deselect any previously selected word
+        if (selectedWord) {
+          selectedWord.classList.remove("selected");
         }
-        return {
-            infinitive: infinitive.trim(),
-            past: past.trim(),
-            participle: participle.trim(),
-            translation: translation.trim(),
-        };
-    }).filter(Boolean);
+        // Select this one
+        draggable.classList.add("selected");
+        selectedWord = draggable;
+      }
+    });
+  });
 
-    if (newVerbs.length === 0) {
-        alert("No valid verbs were added.");
-        return;
-    }
+  // Allow slots to be clicked so the selected word can be placed
+  document.querySelectorAll(".slot").forEach(slot => {
+    slot.addEventListener("click", () => {
+      if (selectedWord) {
+        // If there's already a word in the slot, swap them back to the pool
+        if (slot.textContent.trim() !== "") {
+          const existingWord = slot.textContent.trim();
+          const newDraggable = document.createElement("div");
+          newDraggable.classList.add("draggable");
+          newDraggable.textContent = existingWord;
+          draggablesContainer.appendChild(newDraggable);
 
-    verbs = [...verbs, ...newVerbs];
-    verbsInputField.value = ""; // Clear input field
-    alert(`${newVerbs.length} verbs added successfully!`);
+          // Re-attach the click-to-select logic
+          newDraggable.addEventListener("click", () => {
+            if (selectedWord === newDraggable) {
+              newDraggable.classList.remove("selected");
+              selectedWord = null;
+            } else {
+              if (selectedWord) {
+                selectedWord.classList.remove("selected");
+              }
+              newDraggable.classList.add("selected");
+              selectedWord = newDraggable;
+            }
+          });
+        }
 
-    // Show game section and start game
-    inputSection.style.display = "none";
-    gameSection.style.display = "block";
-    initGame();
+        // Place the selected word in the slot
+        slot.textContent = selectedWord.textContent;
+
+        // Remove the draggable from the pool
+        selectedWord.remove();
+        selectedWord = null;
+      }
+    });
+  });
+
+  // Show the game section
+  gameSection.style.display = "block";
+}
+
+// Handle Form Submission
+addVerbsForm.addEventListener("submit", e => {
+  e.preventDefault();
+  
+  // Convert each line into an object with 4 properties, trimming spaces
+  verbs = verbsInputField.value.trim().split("\n").map(line => {
+    const parts = line.split(",").map(item => item.trim());
+    const [inf, past, part, trans] = parts;
+    return { 
+      infinitive: inf || "", 
+      past: past || "", 
+      participle: part || "", 
+      translation: trans || "" 
+    };
+  });
+
+  // Hide input section, start the game
+  inputSection.style.display = "none";
+  initGame();
 });
 
 // Check Answers
 checkAnswersButton.addEventListener("click", () => {
-    const slots = document.querySelectorAll(".slot");
-    let allCorrect = true;
+  const slots = document.querySelectorAll(".slot");
+  let allCorrect = true;
+  let anyIncorrect = false;
 
-    slots.forEach(slot => {
-        const dragging = slot.firstChild;
+  slots.forEach(slot => {
+    const placedWord = slot.textContent.trim().toLowerCase();
+    const correctWord = slot.dataset.answer.trim().toLowerCase();
 
-        if (dragging) {
-            const expectedText = slot.dataset.answer.trim().toLowerCase(); // Get expected word text
-            const actualText = dragging.textContent.trim().toLowerCase(); // Get user-placed word
+    // If the slot is empty, it's definitely not correct
+    if (!placedWord) {
+      allCorrect = false;
+      anyIncorrect = true;
+      // Optional: visually mark empty slots
+      slot.classList.remove("slot-correct");
+      slot.classList.add("slot-incorrect");
+      return;
+    }
 
-            if (actualText === expectedText) {
-                dragging.classList.add("correct"); // Turn green
-                dragging.classList.remove("incorrect");
-            } else {
-                dragging.classList.remove("correct");
-                dragging.classList.add("incorrect"); // Turn red
-                draggablesContainer.appendChild(dragging); // Move item back to pool
-                allCorrect = false;
-            }
-        } else {
-            allCorrect = false;
-        }
-    });
-
-    if (allCorrect) {
-        alert("Well done! You completed the exercise.");
+    // Check correctness
+    if (placedWord === correctWord) {
+      // Mark visually as correct
+      slot.classList.add("slot-correct");
+      slot.classList.remove("slot-incorrect");
     } else {
-        alert("Some items are incorrect. Incorrect items were reset.");
-    }
-});
+      // Mark visually as incorrect
+      slot.classList.remove("slot-correct");
+      slot.classList.add("slot-incorrect");
 
-// Shuffle Array
-function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+      // Move the incorrect word back to the pool
+      const wordDiv = document.createElement("div");
+      wordDiv.classList.add("draggable", "incorrect");
+      wordDiv.textContent = slot.textContent;
+      draggablesContainer.appendChild(wordDiv);
+
+      // Rebind click-to-select
+      wordDiv.addEventListener("click", () => {
+        if (selectedWord === wordDiv) {
+          wordDiv.classList.remove("selected");
+          selectedWord = null;
+        } else {
+          if (selectedWord) {
+            selectedWord.classList.remove("selected");
+          }
+          wordDiv.classList.add("selected");
+          selectedWord = wordDiv;
+        }
+      });
+
+      // Clear the slot
+      slot.textContent = "";
+      
+      allCorrect = false;
+      anyIncorrect = true;
     }
-    return array;
-}
+  });
+
+  // If there were any incorrect answers, lose 1 life
+  if (anyIncorrect) {
+    lives--;
+    updateLivesDisplay();
+    if (lives <= 0) {
+      alert("Game Over!");
+      restartGame();
+      return;
+    }
+  }
+
+  // If everything was correct, show success message
+  if (allCorrect && !anyIncorrect) {
+    alert("Well Done!");
+  }
+});
 
 // Restart Game
-restartButton.addEventListener("click", () => {
-    initGame();
+restartGameButton.addEventListener("click", () => {
+  restartGame();
 });
 
-// Start the Game (wait for user input)
-gameSection.style.display = "none";
+// Utility function to reset the entire game
+function restartGame() {
+  inputSection.style.display = "block";
+  gameSection.style.display = "none";
+  verbsInputField.value = "";
+  targetsContainer.innerHTML = "";
+  draggablesContainer.innerHTML = "";
+  lives = 5;
+  updateLivesDisplay();
+  verbs = [];
+  selectedWord = null;
+}

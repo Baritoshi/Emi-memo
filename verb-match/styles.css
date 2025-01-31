@@ -21,11 +21,6 @@ h1 {
     margin-bottom: 10px;
 }
 
-p {
-    font-size: 1.2em;
-    margin-bottom: 20px;
-}
-
 textarea {
     width: 90%;
     height: 100px;
@@ -50,23 +45,34 @@ button {
         background-color: #0056b3;
     }
 
-/* Game Layout */
-.game {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    margin-top: 20px;
-}
-
-.targets {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.target {
+/* Lives Display */
+.lives-container {
     display: flex;
     align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#hearts-container {
+    display: flex;
+}
+
+.heart-icon {
+    width: 30px;
+    height: 30px;
+    margin: 0 5px;
+}
+
+Target Slots / .targets { / Each verb target in its own row
+display: flex; flex-direction: column; gap: 15px; margin-top: 20px;
+}
+
+.target { /* Slots arranged horizontally for each verb */
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
     gap: 10px;
     border: 2px solid #007bff;
     border-radius: 8px;
@@ -76,11 +82,11 @@ button {
 
     .target h3 {
         margin: 0;
-        font-size: 1.1em;
+        font-size: 1.1em; /* Optional margin between verb label and slots */
+        margin-right: 10px;
     }
 
-/* Slots for Draggable Placement */
-.slot {
+/* Answer Slots */ .slot {
     width: 150px;
     height: 40px;
     border: 2px dashed #007bff;
@@ -90,15 +96,15 @@ button {
     align-items: center;
     font-size: 1em;
     background-color: #f4f4f4;
-    transition: background-color 0.3s;
+    cursor: pointer;
 }
 
-/* Draggable Items */
-.draggables {
+/* Draggable Words */ .draggables {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
+    margin-top: 20px;
 }
 
 .draggable {
@@ -112,21 +118,15 @@ button {
     align-items: center;
     font-size: 1em;
     cursor: pointer;
-    transition: transform 0.2s, background-color 0.3s;
 }
 
-    /* Feedback Styles for Correct and Incorrect Matches */
-    .draggable.selected {
+    /* Selected Word */ .draggable.selected {
         background-color: purple;
-        color: white;
     }
 
-    .draggable.correct {
-        background-color: #28a745; /* Green */
-        color: white;
+    /* Feedback for reinserted incorrect word */ .draggable.incorrect {
+        background-color: #dc3545;
     }
 
-    .draggable.incorrect {
-        background-color: #dc3545; /* Red */
-        color: white;
-    }
+/* If you want to visually highlight correct/incorrect slots: / .slot-correct { border-color: #28a745 !important; / Green border / background-color: #e1f8e1; / Light green background / } .slot-incorrect { border-color: #dc3545 !important; / Red border / background-color: #f9e1e1; / Light red background */
+}
