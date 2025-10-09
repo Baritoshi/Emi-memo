@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fiszki — szybka gra</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<main class="app">
+<!-- SETUP VIEW -->
+<section id="setupView" class="view setup card-like active" aria-labelledby="setupTitle">
+<h1 id="setupTitle">Fiszki — wprowadź pary i startuj</h1>
+<p class="lead">Wpisuj po jednej parze w wierszu, <strong>słówko</strong> i <strong>znaczenie</strong> rozdziel <strong>średnikiem</strong> (<code>;</code>). Np.: <em>engine; silnik</em></p>
+<textarea id="inputPairs" spellcheck="false" placeholder="engine; silnik
+wheel; koło
+wrench; klucz
+spark plug; świeca zapłonowa"></textarea>
+<div id="setupError" class="error hidden" role="alert"></div>
+<div class="row" style="margin-top:12px; gap:8px">
+<div class="fine">Skróty w grze: <span class="kbd">Space</span> — pokaż znaczenie • <span class="kbd">J</span> — <em>Umiem</em> • <span class="kbd">F</span> — <em>Nie umiem</em></div>
+<div style="display:flex; gap:8px; margin-left:auto">
+<button id="sampleBtn" class="btn secondary" type="button">Wstaw przykładową listę</button>
+<button id="startBtn" class="btn" type="button">Start</button>
+</div>
+</div>
+</section>
+
+
+<!-- GAME VIEW -->
+<section id="gameView" class="view game card-like" aria-live="polite">
+<div class="topbar">
+<div class="progress" id="progress">Pozostało: 0</div>
+<button id="backBtn" class="btn secondary" type="button" aria-label="Wróć do wprowadzania listy">↩︎ Wróć</button>
+</div>
+</html>
