@@ -25,13 +25,25 @@ spark plug; świeca zapłonowa"></textarea>
 
       <div id="setupError" class="error hidden" role="alert"></div>
 
-      <!-- BEZ <form> -->
+      <!-- Podsumowanie pamięci SRS -->
+      <div class="row" style="margin-top:8px">
+        <div class="fine">
+          Pamięć SRS: <strong><span id="srsCount">0</span></strong> kart •
+          Do powtórki dziś: <strong><span id="srsDue">0</span></strong>
+        </div>
+        <div style="display:flex; gap:8px; margin-left:auto">
+          <button id="srsDetailsBtn" class="btn secondary" type="button">Szczegóły pamięci</button>
+        </div>
+      </div>
+
       <div class="row" style="margin-top:12px; gap:8px">
         <div class="fine">
           Skróty w grze: <span class="kbd">Space</span> — pokaż •
           <span class="kbd">J</span> — Umiem • <span class="kbd">F</span> — Nie umiem
         </div>
-        <div style="display:flex; gap:8px; margin-left:auto">
+        <div style="display:flex; gap:8px; margin-left:auto; flex-wrap:wrap">
+          <button id="reviewBtn" class="btn secondary" type="button" title="Załaduj zestaw w terminie z localStorage">Tryb powtórki (0)</button>
+          <button id="clearReviewBtn" class="btn secondary" type="button" title="Wyczyść zapisane karty SRS">Wyczyść powtórkę</button>
           <button id="sampleBtn" class="btn secondary" type="button">Wstaw przykładową listę</button>
           <button id="startBtn" class="btn" type="button">Start</button>
         </div>
@@ -72,6 +84,31 @@ spark plug; świeca zapłonowa"></textarea>
           <button id="againBtn" class="btn" type="button">Zagraj ponownie</button>
           <button id="restartBtn" class="btn secondary" type="button">Nowa talia</button>
         </div>
+      </div>
+    </section>
+
+    <!-- SRS DETAILS VIEW -->
+    <section id="srsView" class="view setup card-like" aria-labelledby="srsTitle">
+      <h1 id="srsTitle">Pamięć (Leitner) — szczegóły</h1>
+      <p class="lead">Razem: <strong><span id="srsCount2">0</span></strong> •
+        Do powtórki dziś: <strong><span id="srsDue2">0</span></strong></p>
+
+      <div class="table-wrap" style="margin-top:8px">
+        <table class="table" id="srsTable">
+          <thead>
+            <tr>
+              <th>Słówko</th>
+              <th>Znaczenie</th>
+              <th>Pudełko</th>
+              <th>Następna powtórka</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div style="display:flex; gap:8px; margin-top:16px">
+        <button id="srsBackBtn" class="btn secondary" type="button">↩︎ Wróć</button>
       </div>
     </section>
 

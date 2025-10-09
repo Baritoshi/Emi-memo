@@ -1,13 +1,29 @@
 document.addEventListener('DOMContentLoaded', () => {
   const byId = (id) => document.getElementById(id);
 
+  // Views
   const setupView   = byId('setupView');
   const gameView    = byId('gameView');
+  const srsView     = byId('srsView');
+
+  // Setup controls
   const input       = byId('inputPairs');
   const setupError  = byId('setupError');
   const sampleBtn   = byId('sampleBtn');
   const startBtn    = byId('startBtn');
+  const reviewBtn   = byId('reviewBtn');
+  const clearReviewBtn = byId('clearReviewBtn');
+  const srsDetailsBtn  = byId('srsDetailsBtn');
 
+  // SRS summary (on setup) + details (on srsView)
+  const srsCountEl  = byId('srsCount');
+  const srsDueEl    = byId('srsDue');
+  const srsCount2   = byId('srsCount2');
+  const srsDue2     = byId('srsDue2');
+  const srsBackBtn  = byId('srsBackBtn');
+  const srsTable    = byId('srsTable');
+
+  // Game controls
   const progressEl  = byId('progress');
   const backBtn     = byId('backBtn');
 
@@ -24,12 +40,105 @@ document.addEventListener('DOMContentLoaded', () => {
   const knowBtn     = byId('knowBtn');
   const dontKnowBtn = byId('dontKnowBtn');
 
-  // --- STAN GRY ---
+  /* ---------- SRS Leitner (5 pudełek, dni: 1,2,4,8,16) ---------- */
+  const STORAGE_KEY = 'flash_srs_v1';
+  const MAX_BOX = 5;
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const INTERVALS_DAYS = { 1: 1, 2: 2, 3: 4, 4: 8, 5: 16 };
+
+  const storage = {
+    get() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr.filter(x => x && x.term && x.meaning) : [];
+      } catch { return []; }
+    },
+    set(arr) { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); },
+    clear()  { localStorage.removeItem(STORAGE_KEY); }
+  };
+
+  const normalize = (s) => (s || '').trim().toLowerCase();
+  const keyOf = (c) => `${normalize(c.term)}|${normalize(c.meaning)}`;
+
+  function readAll() { return storage.get(); }
+  function writeAll(arr) { storage.set(arr); updateReviewBadge(); refreshSrsSummary(); }
+
+  function findIndex(arr, card) {
+    const k = keyOf(card);
+    return arr.findIndex(x => keyOf(x) === k);
+  }
+
+  function ensureEntry(card) {
+    const arr = readAll();
+    const idx = findIndex(arr, card);
+    if (idx >= 0) return { arr, idx };
+    const entry = {
+      term: card.term,
+      meaning: card.meaning,
+      box: 1,
+      dueAt: Date.now() + INTERVALS_DAYS[1] * DAY_MS
+    };
+    arr.push(entry);
+    writeAll(arr);
+    return { arr, idx: arr.length - 1 };
+  }
+
+  function promote(card) {
+    const all = readAll();
+    const idx = findIndex(all, card);
+    if (idx < 0) return;
+    const e = all[idx];
+    e.box = Math.min(MAX_BOX, (e.box || 1) + 1);
+    e.dueAt = Date.now() + INTERVALS_DAYS[e.box] * DAY_MS;
+    writeAll(all);
+  }
+
+  function demote(card) {
+    const { arr, idx } = ensureEntry(card);
+    const e = arr[idx];
+    e.box = 1;
+    e.dueAt = Date.now() + INTERVALS_DAYS[1] * DAY_MS;
+    writeAll(arr);
+  }
+
+  function removeFromSrs(card) {
+    const all = readAll();
+    const idx = findIndex(all, card);
+    if (idx >= 0) {
+      all.splice(idx, 1);
+      writeAll(all);
+    }
+  }
+
+  function dueNowCount() {
+    const now = Date.now();
+    return readAll().filter(e => (e.dueAt ?? 0) <= now).length;
+  }
+
+  function getDueNow() {
+    const now = Date.now();
+    return readAll().filter(e => (e.dueAt ?? 0) <= now);
+  }
+
+  function updateReviewBadge() {
+    if (reviewBtn) reviewBtn.textContent = `Tryb powtórki (${dueNowCount()})`;
+  }
+
+  function refreshSrsSummary() {
+    const total = readAll().length;
+    const due = dueNowCount();
+    if (srsCountEl) srsCountEl.textContent = String(total);
+    if (srsDueEl)   srsDueEl.textContent   = String(due);
+    updateReviewBadge();
+  }
+
+  /* -------------- stan gry -------------- */
   let deck = [];          // [{ term, meaning, failedBefore }]
-  let queue = [];         // kolejka do odpytywania
-  let current = null;     // aktualna karta
-  let revealed = false;   // czy odsłonięta?
-  let firstTryCount = 0;  // ILE „UMIEM” ZA PIERWSZYM RAZEM
+  let queue = [];
+  let current = null;
+  let revealed = false;
+  let firstTryCount = 0;
   let totalCards = 0;
 
   function parseInput(text){
@@ -47,13 +156,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function show(view){
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    // „pancernie” wymuś display
+    document.querySelectorAll('.view').forEach(v => {
+      v.classList.remove('active');
+      v.style.display = 'none';
+    });
     view.classList.add('active');
+    view.style.display = 'block';
   }
 
   function updateProgress(){
     const remaining = queue.length + (current ? 1 : 0);
-    progressEl.textContent = `Pozostało: ${remaining} • Za pierwszym razem: ${firstTryCount}`;
+    progressEl.textContent = `Pozostało: ${remaining} • Za 1. razem: ${firstTryCount}`;
   }
 
   function setRevealed(v){
@@ -67,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if(!current){ finish(); return; }
     frontText.textContent = current.term;
     backText.textContent  = current.meaning;
-    setRevealed(false);   // start od słówka
+    setRevealed(false);
     updateProgress();
   }
 
@@ -80,10 +194,25 @@ document.addEventListener('DOMContentLoaded', () => {
   function finish(){
     gameArea.classList.add('hidden');
     finishArea.classList.remove('hidden');
-    // pokaż krótkie podsumowanie w tekście pod nagłówkiem
     const lead = finishArea.querySelector('.lead');
     if (lead) lead.textContent = `Wszystkie fiszki zaliczone. Trafienia za 1. razem: ${firstTryCount}/${totalCards}.`;
     updateProgress();
+    updateReviewBadge();
+    refreshSrsSummary();
+  }
+
+  function startWithPairs(pairs){
+    deck = pairs.map(p => ({ ...p, failedBefore: false }));
+    queue = deck.slice();
+    totalCards = deck.length;
+    firstTryCount = 0;
+
+    gameArea.classList.remove('hidden');
+    finishArea.classList.add('hidden');
+
+    show(gameView);
+    nextCard();
+    flashcard.focus();
   }
 
   function startGameFromText(text){
@@ -99,25 +228,58 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     setupError.classList.add('hidden');
-
-    // zainicjalizuj talię wraz z flagą „czy wcześniej była pomyłka”
-    deck = pairs.map(p => ({ ...p, failedBefore: false }));
-    queue = deck.slice();
-    totalCards = deck.length;
-    firstTryCount = 0;
-
-    gameArea.classList.remove('hidden');
-    finishArea.classList.add('hidden');
-
-    show(gameView);
-    nextCard();
-    flashcard.focus();
+    startWithPairs(pairs);
   }
 
-  // Zdarzenia (bez <form>, więc żadnego submitu)
-  startBtn.addEventListener('click', () => startGameFromText(input?.value ?? ''));
+  function startReviewMode(){
+    const due = getDueNow();
+    if(due.length === 0){
+      setupError.classList.remove('hidden');
+      setupError.textContent = 'Brak kart „na dziś” w SRS.';
+      return;
+    }
+    setupError.classList.add('hidden');
+    startWithPairs(due.map(({term, meaning}) => ({term, meaning})));
+  }
 
-  // Ctrl+Enter startuje grę z pola textarea
+  /* ---- SRS DETAILS (tabela) ---- */
+  function escapeHtml(s){
+    return String(s)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;');
+  }
+  function fmtDate(ts){
+    if (!ts) return '—';
+    const d = new Date(ts);
+    return d.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
+  }
+  function buildSrsTable(){
+    const data = readAll().slice().sort((a,b)=> (a.dueAt||0) - (b.dueAt||0));
+    const tbody = srsTable.querySelector('tbody');
+    tbody.innerHTML = '';
+    for (const e of data){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(e.term)}</td>
+        <td>${escapeHtml(e.meaning)}</td>
+        <td>${e.box ?? 1}</td>
+        <td>${fmtDate(e.dueAt)}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+    if (srsCount2) srsCount2.textContent = String(data.length);
+    if (srsDue2)   srsDue2.textContent   = String(dueNowCount());
+  }
+
+  /* -------------- zdarzenia -------------- */
+  startBtn.addEventListener('click', () => startGameFromText(input?.value ?? ''));
+  reviewBtn.addEventListener('click', startReviewMode);
+  clearReviewBtn.addEventListener('click', () => { storage.clear(); updateReviewBadge(); refreshSrsSummary(); });
+
+  srsDetailsBtn.addEventListener('click', () => { buildSrsTable(); show(srsView); });
+  srsBackBtn.addEventListener('click', () => { show(setupView); refreshSrsSummary(); });
+
   input.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.key === 'Enter') {
       e.preventDefault();
@@ -137,10 +299,9 @@ coolant; płyn chłodniczy`;
     input.focus();
   });
 
-  backBtn.addEventListener('click', ()=> show(setupView));
+  backBtn.addEventListener('click', ()=> { show(setupView); updateReviewBadge(); refreshSrsSummary(); });
   againBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
-    // reset licznika i flag first-try
     firstTryCount = 0;
     deck.forEach(c => c.failedBefore = false);
     queue = deck.slice();
@@ -151,6 +312,8 @@ coolant; płyn chłodniczy`;
   restartBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
     show(setupView);
+    updateReviewBadge();
+    refreshSrsSummary();
   });
 
   // Kliknięcie karty — tylko odkryj
@@ -165,17 +328,21 @@ coolant; płyn chłodniczy`;
   knowBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
     if(!revealed) return;
-    // zalicz jako „za 1. razem”, jeśli wcześniej nie kliknięto „Nie umiem”
+
     if (!current.failedBefore) firstTryCount++;
+
+    promote(current);      // aktualizacja SRS
     nextCard();
   });
 
   dontKnowBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
     if(!revealed) return;
-    // oznacz, że na tej karcie był błąd — nie będzie liczona jako first-try
+
     current.failedBefore = true;
-    queue.push(current);
+
+    demote(current);       // Box 1, due +1 dzień
+    queue.push(current);   // wraca jeszcze w tej sesji
     nextCard();
   });
 
@@ -188,5 +355,8 @@ coolant; płyn chłodniczy`;
     if(e.code==='KeyF'){ e.preventDefault(); if(revealed) dontKnowBtn.click(); }
     if(e.code==='Escape'){ e.preventDefault(); backBtn.click(); }
   });
-});
 
+  // start: odśwież liczniki SRS
+  updateReviewBadge();
+  refreshSrsSummary();
+});
