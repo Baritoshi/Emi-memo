@@ -191,7 +191,7 @@ addVerbsForm.addEventListener("submit", (e) => {
         }
 
         // Split into parts
-        const parts = trimmedLine.split(",").map((p) => p.trim());
+        const parts = trimmedLine.split(";").map((p) => p.trim());
 
         // Check if we have exactly 4 items: [inf, past, part, trans]
         if (parts.length !== 4) {

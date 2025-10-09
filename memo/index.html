@@ -1,40 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memory Card Game</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memory Card Game</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <script src="script.js" defer></script>
 </head>
 <body>
+  <div class="app">
+
+    <!-- Back to menu -->
+    <div class="topbar">
+      <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
+    </div>
+
     <h1>Memory Card Game</h1>
 
     <!-- Player Configuration Form -->
     <form id="player-config">
-        <h2>Configure Players</h2>
-        <label for="num-players">Number of Players:</label>
-        <input type="number" id="num-players" min="1" max="10" value="2" required>
-        <div id="player-names"></div>
-        <button type="button" id="generate-players">Generate Player Fields</button>
-        <button type="submit">Start Game</button>
+      <h2>Configure Players</h2>
+      <label for="num-players">Number of Players:</label>
+      <input type="number" id="num-players" min="1" max="10" value="2" required />
+      <div id="player-names"></div>
+      <button type="button" id="generate-players">Generate Player Fields</button>
+      <button type="submit">Start Game</button>
     </form>
-
 
     <!-- Word Input Form -->
     <form id="word-form" style="display: none;">
-        <h2>Enter Word Pairs</h2>
-        <textarea id="word-input" placeholder="Enter word pairs: English,Polish\nEnglish,Polish" rows="10" cols="30" required></textarea>
-        <button type="submit">Start Game</button>
+      <h2>Enter Word Pairs</h2>
+      <textarea id="word-input"
+        placeholder="Enter word pairs (use semicolons): English;Polish↵English;Polish"
+        rows="10" cols="30" required></textarea>
+      <button type="submit">Start Game</button>
     </form>
 
     <!-- Game Container -->
     <div id="game-container" style="display: none;">
-        <div id="score-board"></div>
-        <div id="turn-indicator" style="font-weight: bold; margin-bottom: 20px;">Player's Turn: </div>
-        <div id="game-board"></div>
-        <button onclick="restartGame()">Restart Game</button>
+      <div id="score-board"></div>
+      <div id="turn-indicator" style="font-weight: bold; margin-bottom: 20px;">Player's Turn: </div>
+      <div id="game-board"></div>
+      <button onclick="restartGame()">Restart Game</button>
     </div>
-
-    <script src="script.js"></script>
+  </div>
 </body>
 </html>

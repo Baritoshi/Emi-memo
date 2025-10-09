@@ -1,55 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Verb Matching Game</title>
-    <!-- Link to the CSS -->
-    <link rel="stylesheet" href="styles.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verb Matching Game</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <script src="app.js" defer></script>
 </head>
 <body>
-    <div class="container">
-        <h1>Verb Matching Game</h1>
-        <p>Add your verbs, then match them correctly!</p>
+  <div class="container">
 
-        <!-- Input Form -->
-        <div id="input-section">
-            <h2>Add Verbs</h2>
-            <form id="add-verbs-form">
-                <textarea id="verbs-input"
-                          placeholder="Format: infinitive,past,participle,translation (one per line)"></textarea>
-                <button type="submit">Add Verbs</button>
-            </form>
-        </div>
-
-        <!-- Game Section -->
-        <div id="game-section" style="display: none;">
-            <!-- Lives & Score Display -->
-            <div class="status-bar">
-                <div class="lives-container">
-                    <p>Lives: <span id="lives-display">5</span></p>
-                    <div id="hearts-container"></div>
-                </div>
-                <div class="score-container">
-                    <p>Score: <span id="score-display">0</span></p>
-                </div>
-            </div>
-
-            <!-- Target Slots -->
-            <div class="targets" id="targets"></div>
-
-            <!-- Word Selection -->
-            <div class="draggables" id="draggables"></div>
-
-            <!-- Controls -->
-            <div class="controls">
-                <button id="check-answers">Check Answers</button>
-                <button id="restart-game">Restart Game</button>
-            </div>
-        </div>
+    <!-- Back to menu -->
+    <div class="topbar">
+      <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
     </div>
 
-    <!-- Link to your JavaScript -->
-    <script src="app.js"></script>
+    <h1>Verb Matching Game</h1>
+    <p>Add your verbs, then match them correctly!</p>
+
+    <!-- Input Form -->
+    <div id="input-section">
+      <h2>Add Verbs</h2>
+      <form id="add-verbs-form">
+        <textarea id="verbs-input"
+          placeholder="Format (use semicolons): infinitive; past; participle; translation — one set per line"></textarea>
+        <button type="submit">Add Verbs</button>
+      </form>
+    </div>
+
+    <!-- Game Section -->
+    <div id="game-section" style="display: none;">
+      <!-- Lives & Score Display -->
+      <div class="status-bar">
+        <div class="lives-container">
+          <p>Lives: <span id="lives-display">5</span></p>
+          <div id="hearts-container"></div>
+        </div>
+        <div class="score-container">
+          <p>Score: <span id="score-display">0</span></p>
+        </div>
+      </div>
+
+      <!-- Target Slots -->
+      <div class="targets" id="targets"></div>
+
+      <!-- Word Selection -->
+      <div class="draggables" id="draggables"></div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <button id="check-answers">Check Answers</button>
+        <button id="restart-game">Restart Game</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

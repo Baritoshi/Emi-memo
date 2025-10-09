@@ -48,7 +48,7 @@ function startGame(event) {
 
     wordPairs = [];
     lines.forEach((line, index) => {
-        const [eng, pl] = line.split(",").map(word => word.trim());
+        const [eng, pl] = line.split(";").map(word => word.trim());
         const pairId = `pair-${index}`;
         wordPairs.push(
             { id: pairId, text: eng, lang: "EN" },
