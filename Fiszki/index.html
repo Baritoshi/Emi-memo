@@ -1,36 +1,81 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Fiszki — szybka gra</title>
-<link rel="stylesheet" href="styles.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fiszki — szybka gra</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="app.js" defer></script>
 </head>
 <body>
-<main class="app">
-<!-- SETUP VIEW -->
-<section id="setupView" class="view setup card-like active" aria-labelledby="setupTitle">
-<h1 id="setupTitle">Fiszki — wprowadź pary i startuj</h1>
-<p class="lead">Wpisuj po jednej parze w wierszu, <strong>słówko</strong> i <strong>znaczenie</strong> rozdziel <strong>średnikiem</strong> (<code>;</code>). Np.: <em>engine; silnik</em></p>
-<textarea id="inputPairs" spellcheck="false" placeholder="engine; silnik
+  <main class="app">
+
+    <!-- SETUP VIEW -->
+    <section id="setupView" class="view setup card-like active" aria-labelledby="setupTitle">
+      <h1 id="setupTitle">Fiszki — wprowadź pary i startuj</h1>
+      <p class="lead">
+        Wpisuj po jednej parze w wierszu, <strong>słówko</strong> i <strong>znaczenie</strong> rozdziel
+        <strong>średnikiem</strong> (<code>;</code>). Np.: <em>engine; silnik</em>
+      </p>
+
+      <textarea id="inputPairs" spellcheck="false" placeholder="engine; silnik
 wheel; koło
 wrench; klucz
 spark plug; świeca zapłonowa"></textarea>
-<div id="setupError" class="error hidden" role="alert"></div>
-<div class="row" style="margin-top:12px; gap:8px">
-<div class="fine">Skróty w grze: <span class="kbd">Space</span> — pokaż znaczenie • <span class="kbd">J</span> — <em>Umiem</em> • <span class="kbd">F</span> — <em>Nie umiem</em></div>
-<div style="display:flex; gap:8px; margin-left:auto">
-<button id="sampleBtn" class="btn secondary" type="button">Wstaw przykładową listę</button>
-<button id="startBtn" class="btn" type="button">Start</button>
-</div>
-</div>
-</section>
 
+      <div id="setupError" class="error hidden" role="alert"></div>
 
-<!-- GAME VIEW -->
-<section id="gameView" class="view game card-like" aria-live="polite">
-<div class="topbar">
-<div class="progress" id="progress">Pozostało: 0</div>
-<button id="backBtn" class="btn secondary" type="button" aria-label="Wróć do wprowadzania listy">↩︎ Wróć</button>
-</div>
+      <!-- BEZ <form> -->
+      <div class="row" style="margin-top:12px; gap:8px">
+        <div class="fine">
+          Skróty w grze: <span class="kbd">Space</span> — pokaż •
+          <span class="kbd">J</span> — Umiem • <span class="kbd">F</span> — Nie umiem
+        </div>
+        <div style="display:flex; gap:8px; margin-left:auto">
+          <button id="sampleBtn" class="btn secondary" type="button">Wstaw przykładową listę</button>
+          <button id="startBtn" class="btn" type="button">Start</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- GAME VIEW -->
+    <section id="gameView" class="view game card-like" aria-live="polite">
+      <div class="topbar">
+        <div class="progress" id="progress">Pozostało: 0</div>
+        <button id="backBtn" class="btn secondary" type="button" aria-label="Wróć do wprowadzania listy">↩︎ Wróć</button>
+      </div>
+
+      <div id="gameArea" class="stage">
+        <div class="flashcard" id="flashcard" tabindex="0" aria-label="Kliknij, aby odsłonić znaczenie">
+          <div class="card3d" id="card3d">
+            <div class="face front">
+              <div class="term" id="frontText">—</div>
+              <div class="hint">Kliknij kartę lub naciśnij <span class="kbd">Space</span>, aby odsłonić</div>
+            </div>
+            <div class="face back">
+              <div>
+                <div class="meaning" id="backText">—</div>
+                <div class="actions hidden" id="actions">
+                  <button id="knowBtn" class="btn success" type="button">Umiem (J)</button>
+                  <button id="dontKnowBtn" class="btn danger" type="button">Nie umiem (F)</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="finishArea" class="result hidden">
+        <h2>Gotowe! 🎉</h2>
+        <p class="lead">Wszystkie fiszki zaliczone.</p>
+        <div style="display:flex; gap:8px; justify-content:center; margin-top:8px">
+          <button id="againBtn" class="btn" type="button">Zagraj ponownie</button>
+          <button id="restartBtn" class="btn secondary" type="button">Nowa talia</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+  <noscript>Ta aplikacja wymaga włączonego JavaScriptu.</noscript>
+</body>
 </html>
