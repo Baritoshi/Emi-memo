@@ -1,3 +1,4 @@
+/* FISZKI – klasyczny wariant (odkrywanie karty) + Import/Export */
 document.addEventListener('DOMContentLoaded', () => {
   const byId = (id) => document.getElementById(id);
 
@@ -10,11 +11,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const input       = byId('inputPairs');
   const setupError  = byId('setupError');
   const sampleBtn   = byId('sampleBtn');
-  const startBtn    = byId('startBtn');     // start z SRS
-  const oneOffBtn   = byId('oneOffBtn');    // NOWOŚĆ: sesja jednorazowa
-  const reviewBtn   = byId('reviewBtn');    // karty „na dziś”
+  const startBtn    = byId('startBtn');
+  const oneOffBtn   = byId('oneOffBtn');
+  const reviewBtn   = byId('reviewBtn');
   const clearReviewBtn = byId('clearReviewBtn');
   const srsDetailsBtn  = byId('srsDetailsBtn');
+
+  // Import/Export controls
+  const exportBtn   = byId('exportBtn');
+  const importBtn   = byId('importBtn');
+  const importFile  = byId('importFile');
 
   // SRS summary + details
   const srsCountEl  = byId('srsCount');
@@ -27,7 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Game controls
   const progressEl  = byId('progress');
   const backBtn     = byId('backBtn');
-
   const gameArea    = byId('gameArea');
   const finishArea  = byId('finishArea');
   const againBtn    = byId('againBtn');
@@ -41,278 +46,190 @@ document.addEventListener('DOMContentLoaded', () => {
   const knowBtn     = byId('knowBtn');
   const dontKnowBtn = byId('dontKnowBtn');
 
-  /* ---------- SRS Leitner (5 pudełek, dni: 1,2,4,8,16) ---------- */
+  /* ---------- SRS ---------- */
   const STORAGE_KEY = 'flash_srs_v1';
   const MAX_BOX = 5;
   const DAY_MS = 24 * 60 * 60 * 1000;
-  const INTERVALS_DAYS = { 1: 1, 2: 2, 3: 4, 4: 8, 5: 16 };
+  const INTERVALS_DAYS = { 1:1, 2:2, 3:4, 4:8, 5:16 };
 
   const storage = {
-    get() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        const arr = JSON.parse(raw);
-        return Array.isArray(arr) ? arr.filter(x => x && x.term && x.meaning) : [];
-      } catch { return []; }
-    },
-    set(arr) { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); },
-    clear()  { localStorage.removeItem(STORAGE_KEY); }
+    get(){ try{ const raw=localStorage.getItem(STORAGE_KEY); const arr=JSON.parse(raw); return Array.isArray(arr)?arr.filter(x=>x&&x.term&&x.meaning):[]; }catch{return [];} },
+    set(arr){ localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); },
+    clear(){ localStorage.removeItem(STORAGE_KEY); }
   };
 
-  const normalize = (s) => (s || '').trim().toLowerCase();
-  const keyOf = (c) => `${normalize(c.term)}|${normalize(c.meaning)}`;
+  const normalize = (s)=>(s||'').trim().toLowerCase();
+  const keyOf = (c)=>`${normalize(c.term)}|${normalize(c.meaning)}`;
 
-  function readAll() { return storage.get(); }
-  function writeAll(arr) { storage.set(arr); updateReviewBadge(); refreshSrsSummary(); }
-  function findIndex(arr, card) { return arr.findIndex(x => keyOf(x) === keyOf(card)); }
+  function readAll(){ return storage.get(); }
+  function writeAll(arr){ storage.set(arr); updateReviewBadge(); refreshSrsSummary(); }
+  function findIndex(arr, card){ return arr.findIndex(x=>keyOf(x)===keyOf(card)); }
 
-  function ensureEntry(card) {
-    const arr = readAll();
-    const idx = findIndex(arr, card);
-    if (idx >= 0) return { arr, idx };
-    const entry = {
-      term: card.term, meaning: card.meaning,
-      box: 1, dueAt: Date.now() + INTERVALS_DAYS[1] * DAY_MS
-    };
-    arr.push(entry); writeAll(arr);
-    return { arr, idx: arr.length - 1 };
+  function ensureEntry(card){
+    const arr = readAll(); const idx = findIndex(arr, card);
+    if(idx>=0) return {arr, idx};
+    const entry = { term:card.term, meaning:card.meaning, box:1, dueAt: Date.now()+INTERVALS_DAYS[1]*DAY_MS };
+    arr.push(entry); writeAll(arr); return {arr, idx:arr.length-1};
   }
-  function promote(card) {
-    const all = readAll();
-    const idx = findIndex(all, card);
-    if (idx < 0) return;
-    const e = all[idx];
-    e.box = Math.min(MAX_BOX, (e.box || 1) + 1);
-    e.dueAt = Date.now() + INTERVALS_DAYS[e.box] * DAY_MS;
-    writeAll(all);
+  function promote(card){
+    const all = readAll(); const idx = findIndex(all, card); if(idx<0) return;
+    const e = all[idx]; e.box = Math.min(MAX_BOX, (e.box||1)+1); e.dueAt = Date.now()+INTERVALS_DAYS[e.box]*DAY_MS; writeAll(all);
   }
-  function demote(card) {
-    const { arr, idx } = ensureEntry(card);
-    const e = arr[idx];
-    e.box = 1;
-    e.dueAt = Date.now() + INTERVALS_DAYS[1] * DAY_MS;
-    writeAll(arr);
+  function demote(card){
+    const {arr, idx} = ensureEntry(card); const e = arr[idx];
+    e.box = 1; e.dueAt = Date.now()+INTERVALS_DAYS[1]*DAY_MS; writeAll(arr);
   }
-  function dueNowCount() {
-    const now = Date.now();
-    return readAll().filter(e => (e.dueAt ?? 0) <= now).length;
-  }
-  function getDueNow() {
-    const now = Date.now();
-    return readAll().filter(e => (e.dueAt ?? 0) <= now);
-  }
-  function updateReviewBadge() {
-    if (reviewBtn) reviewBtn.textContent = `Tryb powtórki (${dueNowCount()})`;
-  }
-  function refreshSrsSummary() {
-    const total = readAll().length;
-    const due = dueNowCount();
-    if (srsCountEl) srsCountEl.textContent = String(total);
-    if (srsDueEl)   srsDueEl.textContent   = String(due);
-  }
+  function dueNowCount(){ const now=Date.now(); return readAll().filter(e=>(e.dueAt??0)<=now).length; }
+  function getDueNow(){ const now=Date.now(); return readAll().filter(e=>(e.dueAt??0)<=now); }
+  function updateReviewBadge(){ if(reviewBtn) reviewBtn.textContent = `Tryb powtórki (${dueNowCount()})`; }
+  function refreshSrsSummary(){ const total=readAll().length; const due=dueNowCount(); if(srsCountEl) srsCountEl.textContent=String(total); if(srsDueEl) srsDueEl.textContent=String(due); }
 
-  /* -------------- stan gry -------------- */
-  let deck = [];          // [{ term, meaning, failedBefore }]
-  let queue = [];
-  let current = null;
-  let revealed = false;
-  let firstTryCount = 0;
-  let totalCards = 0;
+  /* ---------- Import/Export ---------- */
+  const EXPORT_SCHEMA='leitner-srs@1';
+  const tsISO=(d=new Date())=>d.toISOString();
+  function downloadBlob(filename, dataStr){
+    const blob = new Blob([dataStr], {type:'application/json;charset=utf-8'});
+    const url = URL.createObjectURL(blob); const a=document.createElement('a');
+    a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }
+  function sanitizeCards(arr){
+    return (Array.isArray(arr)?arr:[]).filter(x=>x&&typeof x.term==='string'&&typeof x.meaning==='string'&&Number.isFinite(+x.box)&&Number.isFinite(+x.dueAt))
+      .map(x=>({ term:String(x.term), meaning:String(x.meaning), box:Math.min(5,Math.max(1,parseInt(x.box,10)||1)), dueAt: parseInt(x.dueAt,10)||Date.now() }));
+  }
+  function exportSRS(datasetName='Zestaw SRS'){
+    const payload={ schema:EXPORT_SCHEMA, meta:{datasetName, exportedAt:tsISO()}, cards: readAll() };
+    const stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+    downloadBlob(`srs-export-${stamp}.json`, JSON.stringify(payload,null,2));
+  }
+  async function importSRSFile(file){
+    if(!file) return;
+    try{
+      const json = JSON.parse(await file.text());
+      if(json?.schema!==EXPORT_SCHEMA){ alert('Nieprawidłowy plik (schema).'); return; }
+      const cards=sanitizeCards(json.cards);
+      if(cards.length===0){ alert('Brak kart do importu.'); return; }
+      storage.set(cards); updateReviewBadge(); refreshSrsSummary();
+      alert(`Zaimportowano ${cards.length} kart z zestawu: "${json?.meta?.datasetName||'bez nazwy'}".`);
+    }catch(e){ console.error(e); alert('Import nieudany (czy plik to poprawny JSON?).'); }
+    finally{ if(importFile) importFile.value=''; }
+  }
+  exportBtn?.addEventListener('click', ()=>{ const name=prompt('Nazwa zestawu do zapisania:','Mój zestaw'); exportSRS(name||'Mój zestaw'); });
+  importBtn?.addEventListener('click', ()=>importFile?.click());
+  importFile?.addEventListener('change', (e)=>importSRSFile(e.target.files?.[0]));
 
-  // NOWOŚĆ: tryb sesji: 'srs' | 'oneoff' | 'review'
-  let sessionMode = 'srs';
+  /* ---------- Stan gry ---------- */
+  let deck=[], queue=[], current=null, revealed=false, firstTryCount=0, totalCards=0;
+  let sessionMode='srs'; // 'srs' | 'oneoff' | 'review'
 
   function parseInput(text){
-    const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-    const pairs = []; const errors = [];
+    const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+    const pairs=[], errors=[];
     lines.forEach((line,idx)=>{
-      const parts = line.split(';');
-      if(parts.length < 2){ errors.push(idx+1); return; }
-      const term = parts[0].trim();
-      const meaning = parts.slice(1).join(';').trim();
-      if(!term || !meaning){ errors.push(idx+1); return; }
-      pairs.push({ term, meaning });
+      const parts=line.split(';'); if(parts.length<2){ errors.push(idx+1); return; }
+      const term=parts[0].trim(); const meaning=parts.slice(1).join(';').trim();
+      if(!term||!meaning){ errors.push(idx+1); return; }
+      pairs.push({term, meaning});
     });
-    return { pairs, errors };
+    return {pairs, errors};
   }
 
-  function show(view){
-    document.querySelectorAll('.view').forEach(v => { v.classList.remove('active'); v.style.display='none'; });
-    view.classList.add('active'); view.style.display='block';
-  }
-
+  function show(view){ document.querySelectorAll('.view').forEach(v=>{v.classList.remove('active'); v.style.display='none';}); view.classList.add('active'); view.style.display='block'; }
   function updateProgress(){
-    const remaining = queue.length + (current ? 1 : 0);
-    const modeHint = sessionMode === 'oneoff' ? '• Tryb: jednorazowy' :
-                     sessionMode === 'review' ? '• Tryb: powtórka' : '• Tryb: z pamięcią';
-    progressEl.textContent = `Pozostało: ${remaining} • Za 1. razem: ${firstTryCount} ${modeHint}`;
+    const remaining=queue.length+(current?1:0);
+    const modeHint=sessionMode==='oneoff'?'• Tryb: jednorazowy': sessionMode==='review'?'• Tryb: powtórka':'• Tryb: z pamięcią';
+    progressEl.textContent=`Pozostało: ${remaining} • Za 1. razem: ${firstTryCount} ${modeHint}`;
   }
-
-  function setRevealed(v){
-    revealed = v;
-    card3d.classList.toggle('revealed', revealed);
-    actions.classList.toggle('hidden', !revealed);
-  }
-
+  function setRevealed(v){ revealed=v; card3d.classList.toggle('revealed',revealed); actions.classList.toggle('hidden',!revealed); }
   function loadCard(card){
-    current = card || null;
-    if(!current){ finish(); return; }
-    frontText.textContent = current.term;
-    backText.textContent  = current.meaning;
-    setRevealed(false);
-    updateProgress();
+    current=card||null; if(!current){ finish(); return; }
+    frontText.textContent=current.term; backText.textContent=current.meaning; setRevealed(false); updateProgress();
   }
-
-  function nextCard(){
-    if(queue.length===0){ loadCard(null); return; }
-    const n = queue.shift();
-    loadCard(n);
-  }
-
+  function nextCard(){ if(queue.length===0){ loadCard(null); return; } loadCard(queue.shift()); }
   function finish(){
-    gameArea.classList.add('hidden');
-    finishArea.classList.remove('hidden');
-    const lead = finishArea.querySelector('.lead');
-    if (lead) lead.textContent = `Wszystkie fiszki zaliczone. Trafienia za 1. razem: ${firstTryCount}/${totalCards}.`;
-    updateProgress();
-    updateReviewBadge();
-    refreshSrsSummary();
+    gameArea.classList.add('hidden'); finishArea.classList.remove('hidden');
+    const lead=finishArea.querySelector('.lead'); if(lead) lead.textContent=`Wszystkie fiszki zaliczone. Trafienia za 1. razem: ${firstTryCount}/${totalCards}.`;
+    updateProgress(); updateReviewBadge(); refreshSrsSummary();
   }
-
   function startWithPairs(pairs, mode){
-    sessionMode = mode;           // 'srs' | 'oneoff' | 'review'
-    deck = pairs.map(p => ({ ...p, failedBefore: false }));
-    queue = deck.slice();
-    totalCards = deck.length;
-    firstTryCount = 0;
-
-    gameArea.classList.remove('hidden');
-    finishArea.classList.add('hidden');
-
-    show(gameView);
-    nextCard();
-    flashcard.focus();
+    sessionMode=mode; deck=pairs.map(p=>({...p, failedBefore:false})); queue=deck.slice(); totalCards=deck.length; firstTryCount=0;
+    gameArea.classList.remove('hidden'); finishArea.classList.add('hidden'); show(gameView); nextCard(); flashcard.focus();
   }
-
   function startGameFromText(text, mode){
-    const {pairs, errors} = parseInput(text);
-    if(errors.length){
-      setupError.classList.remove('hidden');
-      setupError.textContent = `Błąd w wierszach bez poprawnego separatora ';': ${errors.join(', ')}.`;
-      return;
-    }
-    if(pairs.length===0){
-      setupError.classList.remove('hidden');
-      setupError.textContent = 'Dodaj przynajmniej jedną parę słówek.';
-      return;
-    }
-    setupError.classList.add('hidden');
-    startWithPairs(pairs, mode);
+    const {pairs, errors}=parseInput(text);
+    if(errors.length){ setupError.classList.remove('hidden'); setupError.textContent=`Błąd w wierszach: ${errors.join(', ')} (użyj ';').`; return; }
+    if(pairs.length===0){ setupError.classList.remove('hidden'); setupError.textContent='Dodaj przynajmniej jedną parę.'; return; }
+    setupError.classList.add('hidden'); startWithPairs(pairs, mode);
   }
-
   function startReviewMode(){
-    const due = getDueNow();
-    if(due.length === 0){
-      setupError.classList.remove('hidden');
-      setupError.textContent = 'Brak kart „na dziś” w SRS.';
-      return;
-    }
-    setupError.classList.add('hidden');
-    startWithPairs(due.map(({term, meaning}) => ({term, meaning})), 'review');
+    const due=getDueNow(); if(due.length===0){ setupError.classList.remove('hidden'); setupError.textContent='Brak kart „na dziś”.'; return; }
+    setupError.classList.add('hidden'); startWithPairs(due.map(({term,meaning})=>({term, meaning})), 'review');
   }
 
-  /* -------------- zdarzenia -------------- */
-  startBtn.addEventListener('click', () => startGameFromText(input?.value ?? '', 'srs'));
-  oneOffBtn.addEventListener('click', () => startGameFromText(input?.value ?? '', 'oneoff'));
-  reviewBtn.addEventListener('click', startReviewMode);
-  clearReviewBtn.addEventListener('click', () => { storage.clear(); updateReviewBadge(); refreshSrsSummary(); });
-
-  input.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key === 'Enter') {
-      e.preventDefault();
-      // Ctrl+Enter domyślnie z pamięcią
-      startGameFromText(input.value, 'srs');
+  /* ---- SRS DETAILS ---- */
+  function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function fmtDate(ts){ if(!ts) return '—'; const d=new Date(ts); return d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}); }
+  function buildSrsTable(){
+    const data=readAll().slice().sort((a,b)=>(a.dueAt||0)-(b.dueAt||0));
+    const tbody=srsTable.querySelector('tbody'); tbody.innerHTML='';
+    for(const e of data){
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${escapeHtml(e.term)}</td><td>${escapeHtml(e.meaning)}</td><td>${e.box??1}</td><td>${fmtDate(e.dueAt)}</td>`;
+      tbody.appendChild(tr);
     }
-  });
+    if(srsCount2) srsCount2.textContent=String(data.length); if(srsDue2) srsDue2.textContent=String(dueNowCount());
+  }
 
-  sampleBtn.addEventListener('click', ()=>{
-    input.value = `engine; silnik
+  /* ---- Zdarzenia ---- */
+  startBtn?.addEventListener('click', ()=>startGameFromText(input?.value??'', 'srs'));
+  oneOffBtn?.addEventListener('click', ()=>startGameFromText(input?.value??'', 'oneoff'));
+  reviewBtn?.addEventListener('click', startReviewMode);
+  clearReviewBtn?.addEventListener('click', ()=>{ storage.clear(); updateReviewBadge(); refreshSrsSummary(); });
+
+  srsDetailsBtn?.addEventListener('click', ()=>{ buildSrsTable(); show(srsView); });
+  srsBackBtn?.addEventListener('click', ()=>{ show(setupView); refreshSrsSummary(); });
+
+  input?.addEventListener('keydown', (e)=>{ if(e.ctrlKey && e.key==='Enter'){ e.preventDefault(); startGameFromText(input.value,'srs'); } });
+
+  sampleBtn?.addEventListener('click', ()=>{
+    input.value=`engine; silnik
 wheel; koło
 wrench; klucz
 spark plug; świeca zapłonowa
 brake pad; klocek hamulcowy
 screwdriver; śrubokręt
 fuse; bezpiecznik
-coolant; płyn chłodniczy`;
-    input.focus();
+coolant; płyn chłodniczy`; input.focus();
   });
 
-  // Nawigacja widoków
-  function refreshAllBadges(){ updateReviewBadge(); refreshSrsSummary(); }
-  byId('backBtn').addEventListener('click', ()=> { show(setupView); refreshAllBadges(); });
-  againBtn.addEventListener('click', (e)=>{
-    e.stopPropagation();
-    firstTryCount = 0;
-    deck.forEach(c => c.failedBefore = false);
-    queue = deck.slice();
-    gameArea.classList.remove('hidden');
-    finishArea.classList.add('hidden');
-    nextCard();
-  });
-  restartBtn.addEventListener('click', (e)=>{
-    e.stopPropagation();
-    show(setupView); refreshAllBadges();
-  });
+  backBtn?.addEventListener('click', ()=>{ show(setupView); updateReviewBadge(); refreshSrsSummary(); });
+  againBtn?.addEventListener('click', (e)=>{ e.stopPropagation(); firstTryCount=0; deck.forEach(c=>c.failedBefore=false); queue=deck.slice(); gameArea.classList.remove('hidden'); finishArea.classList.add('hidden'); nextCard(); });
+  restartBtn?.addEventListener('click', (e)=>{ e.stopPropagation(); show(setupView); updateReviewBadge(); refreshSrsSummary(); });
 
-  // Klik karty — odsłoń
-  flashcard.addEventListener('click', ()=> { if(current) setRevealed(true); });
-  actions.addEventListener('click', (e)=> e.stopPropagation());
+  flashcard?.addEventListener('click', ()=>{ if(!current) return; setRevealed(true); });
+  actions?.addEventListener('click', (e)=>e.stopPropagation());
 
-  // Odpowiedzi
-  knowBtn.addEventListener('click', (e)=>{
-    e.stopPropagation();
-    if(!revealed) return;
-
-    if (!current.failedBefore) firstTryCount++;
-
-    // SRS tylko gdy nie jesteśmy w one-off
-    if (sessionMode !== 'oneoff') {
-      if (sessionMode === 'srs' || sessionMode === 'review') {
-        promote(current);
-      }
-    }
+  knowBtn?.addEventListener('click', (e)=>{
+    e.stopPropagation(); if(!revealed) return;
+    if(!current.failedBefore) firstTryCount++;
+    if(sessionMode!=='oneoff') promote(current);
     nextCard();
   });
 
-  dontKnowBtn.addEventListener('click', (e)=>{
-    e.stopPropagation();
-    if(!revealed) return;
-
-    current.failedBefore = true;
-
-    // W każdej sesji w tej rundzie karta wraca na koniec:
-    queue.push(current);
-
-    // SRS tylko gdy nie jesteśmy w one-off
-    if (sessionMode !== 'oneoff') {
-      if (sessionMode === 'srs' || sessionMode === 'review') {
-        demote(current); // Box 1, due +1 dzień
-      }
-    }
+  dontKnowBtn?.addEventListener('click', (e)=>{
+    e.stopPropagation(); if(!revealed) return;
+    current.failedBefore=true; queue.push(current);
+    if(sessionMode!=='oneoff') demote(current);
     nextCard();
   });
 
-  // Skróty klawiszowe
   document.addEventListener('keydown', (e)=>{
     if(!gameView.classList.contains('active')) return;
     if(!current && e.code!=='Escape') return;
     if(e.code==='Space'){ e.preventDefault(); setRevealed(true); }
     if(e.code==='KeyJ'){ e.preventDefault(); if(revealed) knowBtn.click(); }
     if(e.code==='KeyF'){ e.preventDefault(); if(revealed) dontKnowBtn.click(); }
-    if(e.code==='Escape'){ e.preventDefault(); byId('backBtn').click(); }
+    if(e.code==='Escape'){ e.preventDefault(); backBtn.click(); }
   });
 
-  // start: odśwież liczniki SRS
-  updateReviewBadge();
-  refreshSrsSummary();
+  updateReviewBadge(); refreshSrsSummary();
 });
