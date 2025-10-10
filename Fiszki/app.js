@@ -10,12 +10,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const input       = byId('inputPairs');
   const setupError  = byId('setupError');
   const sampleBtn   = byId('sampleBtn');
-  const startBtn    = byId('startBtn');
-  const reviewBtn   = byId('reviewBtn');
+  const startBtn    = byId('startBtn');     // start z SRS
+  const oneOffBtn   = byId('oneOffBtn');    // NOWOŚĆ: sesja jednorazowa
+  const reviewBtn   = byId('reviewBtn');    // karty „na dziś”
   const clearReviewBtn = byId('clearReviewBtn');
   const srsDetailsBtn  = byId('srsDetailsBtn');
 
-  // SRS summary (on setup) + details (on srsView)
+  // SRS summary + details
   const srsCountEl  = byId('srsCount');
   const srsDueEl    = byId('srsDue');
   const srsCount2   = byId('srsCount2');
@@ -63,27 +64,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function readAll() { return storage.get(); }
   function writeAll(arr) { storage.set(arr); updateReviewBadge(); refreshSrsSummary(); }
-
-  function findIndex(arr, card) {
-    const k = keyOf(card);
-    return arr.findIndex(x => keyOf(x) === k);
-  }
+  function findIndex(arr, card) { return arr.findIndex(x => keyOf(x) === keyOf(card)); }
 
   function ensureEntry(card) {
     const arr = readAll();
     const idx = findIndex(arr, card);
     if (idx >= 0) return { arr, idx };
     const entry = {
-      term: card.term,
-      meaning: card.meaning,
-      box: 1,
-      dueAt: Date.now() + INTERVALS_DAYS[1] * DAY_MS
+      term: card.term, meaning: card.meaning,
+      box: 1, dueAt: Date.now() + INTERVALS_DAYS[1] * DAY_MS
     };
-    arr.push(entry);
-    writeAll(arr);
+    arr.push(entry); writeAll(arr);
     return { arr, idx: arr.length - 1 };
   }
-
   function promote(card) {
     const all = readAll();
     const idx = findIndex(all, card);
@@ -93,7 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
     e.dueAt = Date.now() + INTERVALS_DAYS[e.box] * DAY_MS;
     writeAll(all);
   }
-
   function demote(card) {
     const { arr, idx } = ensureEntry(card);
     const e = arr[idx];
@@ -101,36 +93,22 @@ document.addEventListener('DOMContentLoaded', () => {
     e.dueAt = Date.now() + INTERVALS_DAYS[1] * DAY_MS;
     writeAll(arr);
   }
-
-  function removeFromSrs(card) {
-    const all = readAll();
-    const idx = findIndex(all, card);
-    if (idx >= 0) {
-      all.splice(idx, 1);
-      writeAll(all);
-    }
-  }
-
   function dueNowCount() {
     const now = Date.now();
     return readAll().filter(e => (e.dueAt ?? 0) <= now).length;
   }
-
   function getDueNow() {
     const now = Date.now();
     return readAll().filter(e => (e.dueAt ?? 0) <= now);
   }
-
   function updateReviewBadge() {
     if (reviewBtn) reviewBtn.textContent = `Tryb powtórki (${dueNowCount()})`;
   }
-
   function refreshSrsSummary() {
     const total = readAll().length;
     const due = dueNowCount();
     if (srsCountEl) srsCountEl.textContent = String(total);
     if (srsDueEl)   srsDueEl.textContent   = String(due);
-    updateReviewBadge();
   }
 
   /* -------------- stan gry -------------- */
@@ -140,6 +118,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let revealed = false;
   let firstTryCount = 0;
   let totalCards = 0;
+
+  // NOWOŚĆ: tryb sesji: 'srs' | 'oneoff' | 'review'
+  let sessionMode = 'srs';
 
   function parseInput(text){
     const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
@@ -156,18 +137,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function show(view){
-    // „pancernie” wymuś display
-    document.querySelectorAll('.view').forEach(v => {
-      v.classList.remove('active');
-      v.style.display = 'none';
-    });
-    view.classList.add('active');
-    view.style.display = 'block';
+    document.querySelectorAll('.view').forEach(v => { v.classList.remove('active'); v.style.display='none'; });
+    view.classList.add('active'); view.style.display='block';
   }
 
   function updateProgress(){
     const remaining = queue.length + (current ? 1 : 0);
-    progressEl.textContent = `Pozostało: ${remaining} • Za 1. razem: ${firstTryCount}`;
+    const modeHint = sessionMode === 'oneoff' ? '• Tryb: jednorazowy' :
+                     sessionMode === 'review' ? '• Tryb: powtórka' : '• Tryb: z pamięcią';
+    progressEl.textContent = `Pozostało: ${remaining} • Za 1. razem: ${firstTryCount} ${modeHint}`;
   }
 
   function setRevealed(v){
@@ -201,7 +179,8 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshSrsSummary();
   }
 
-  function startWithPairs(pairs){
+  function startWithPairs(pairs, mode){
+    sessionMode = mode;           // 'srs' | 'oneoff' | 'review'
     deck = pairs.map(p => ({ ...p, failedBefore: false }));
     queue = deck.slice();
     totalCards = deck.length;
@@ -215,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
     flashcard.focus();
   }
 
-  function startGameFromText(text){
+  function startGameFromText(text, mode){
     const {pairs, errors} = parseInput(text);
     if(errors.length){
       setupError.classList.remove('hidden');
@@ -228,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     setupError.classList.add('hidden');
-    startWithPairs(pairs);
+    startWithPairs(pairs, mode);
   }
 
   function startReviewMode(){
@@ -239,51 +218,20 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     setupError.classList.add('hidden');
-    startWithPairs(due.map(({term, meaning}) => ({term, meaning})));
-  }
-
-  /* ---- SRS DETAILS (tabela) ---- */
-  function escapeHtml(s){
-    return String(s)
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;');
-  }
-  function fmtDate(ts){
-    if (!ts) return '—';
-    const d = new Date(ts);
-    return d.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
-  }
-  function buildSrsTable(){
-    const data = readAll().slice().sort((a,b)=> (a.dueAt||0) - (b.dueAt||0));
-    const tbody = srsTable.querySelector('tbody');
-    tbody.innerHTML = '';
-    for (const e of data){
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${escapeHtml(e.term)}</td>
-        <td>${escapeHtml(e.meaning)}</td>
-        <td>${e.box ?? 1}</td>
-        <td>${fmtDate(e.dueAt)}</td>
-      `;
-      tbody.appendChild(tr);
-    }
-    if (srsCount2) srsCount2.textContent = String(data.length);
-    if (srsDue2)   srsDue2.textContent   = String(dueNowCount());
+    startWithPairs(due.map(({term, meaning}) => ({term, meaning})), 'review');
   }
 
   /* -------------- zdarzenia -------------- */
-  startBtn.addEventListener('click', () => startGameFromText(input?.value ?? ''));
+  startBtn.addEventListener('click', () => startGameFromText(input?.value ?? '', 'srs'));
+  oneOffBtn.addEventListener('click', () => startGameFromText(input?.value ?? '', 'oneoff'));
   reviewBtn.addEventListener('click', startReviewMode);
   clearReviewBtn.addEventListener('click', () => { storage.clear(); updateReviewBadge(); refreshSrsSummary(); });
-
-  srsDetailsBtn.addEventListener('click', () => { buildSrsTable(); show(srsView); });
-  srsBackBtn.addEventListener('click', () => { show(setupView); refreshSrsSummary(); });
 
   input.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.key === 'Enter') {
       e.preventDefault();
-      startGameFromText(input.value);
+      // Ctrl+Enter domyślnie z pamięcią
+      startGameFromText(input.value, 'srs');
     }
   });
 
@@ -299,7 +247,9 @@ coolant; płyn chłodniczy`;
     input.focus();
   });
 
-  backBtn.addEventListener('click', ()=> { show(setupView); updateReviewBadge(); refreshSrsSummary(); });
+  // Nawigacja widoków
+  function refreshAllBadges(){ updateReviewBadge(); refreshSrsSummary(); }
+  byId('backBtn').addEventListener('click', ()=> { show(setupView); refreshAllBadges(); });
   againBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
     firstTryCount = 0;
@@ -311,27 +261,26 @@ coolant; płyn chłodniczy`;
   });
   restartBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
-    show(setupView);
-    updateReviewBadge();
-    refreshSrsSummary();
+    show(setupView); refreshAllBadges();
   });
 
-  // Kliknięcie karty — tylko odkryj
-  flashcard.addEventListener('click', ()=>{
-    if(!current) return;
-    setRevealed(true);
-  });
-
-  // Zatrzymaj bąbelkowanie klików z przycisków
+  // Klik karty — odsłoń
+  flashcard.addEventListener('click', ()=> { if(current) setRevealed(true); });
   actions.addEventListener('click', (e)=> e.stopPropagation());
 
+  // Odpowiedzi
   knowBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
     if(!revealed) return;
 
     if (!current.failedBefore) firstTryCount++;
 
-    promote(current);      // aktualizacja SRS
+    // SRS tylko gdy nie jesteśmy w one-off
+    if (sessionMode !== 'oneoff') {
+      if (sessionMode === 'srs' || sessionMode === 'review') {
+        promote(current);
+      }
+    }
     nextCard();
   });
 
@@ -341,8 +290,15 @@ coolant; płyn chłodniczy`;
 
     current.failedBefore = true;
 
-    demote(current);       // Box 1, due +1 dzień
-    queue.push(current);   // wraca jeszcze w tej sesji
+    // W każdej sesji w tej rundzie karta wraca na koniec:
+    queue.push(current);
+
+    // SRS tylko gdy nie jesteśmy w one-off
+    if (sessionMode !== 'oneoff') {
+      if (sessionMode === 'srs' || sessionMode === 'review') {
+        demote(current); // Box 1, due +1 dzień
+      }
+    }
     nextCard();
   });
 
@@ -353,7 +309,7 @@ coolant; płyn chłodniczy`;
     if(e.code==='Space'){ e.preventDefault(); setRevealed(true); }
     if(e.code==='KeyJ'){ e.preventDefault(); if(revealed) knowBtn.click(); }
     if(e.code==='KeyF'){ e.preventDefault(); if(revealed) dontKnowBtn.click(); }
-    if(e.code==='Escape'){ e.preventDefault(); backBtn.click(); }
+    if(e.code==='Escape'){ e.preventDefault(); byId('backBtn').click(); }
   });
 
   // start: odśwież liczniki SRS

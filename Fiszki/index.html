@@ -36,21 +36,23 @@ spark plug; świeca zapłonowa"></textarea>
           Pamięć SRS: <strong><span id="srsCount">0</span></strong> kart •
           Do powtórki dziś: <strong><span id="srsDue">0</span></strong>
         </div>
-        <div style="display:flex; gap:8px; margin-left:auto">
+        <div style="display:flex; gap:8px; margin-left:auto; flex-wrap:wrap">
           <button id="srsDetailsBtn" class="btn secondary" type="button">Szczegóły pamięci</button>
         </div>
       </div>
 
       <div class="row" style="margin-top:12px; gap:8px">
         <div class="fine">
-          Skróty w grze: <span class="kbd">Space</span> — pokaż •
+          Skróty: <span class="kbd">Space</span> — pokaż •
           <span class="kbd">J</span> — Umiem • <span class="kbd">F</span> — Nie umiem
         </div>
         <div style="display:flex; gap:8px; margin-left:auto; flex-wrap:wrap">
           <button id="reviewBtn" class="btn secondary" type="button" title="Załaduj zestaw w terminie z localStorage">Tryb powtórki (0)</button>
           <button id="clearReviewBtn" class="btn secondary" type="button" title="Wyczyść zapisane karty SRS">Wyczyść powtórkę</button>
           <button id="sampleBtn" class="btn secondary" type="button">Wstaw przykładową listę</button>
-          <button id="startBtn" class="btn" type="button">Start</button>
+          <!-- NOWOŚĆ: sesja jednorazowa -->
+          <button id="oneOffBtn" class="btn secondary" type="button" title="Jednorazowe odpytywanie bez zapisu do pamięci">Sesja jednorazowa</button>
+          <button id="startBtn" class="btn" type="button">Start (z pamięcią)</button>
         </div>
       </div>
     </section>
