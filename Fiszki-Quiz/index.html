@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fiszki-Quiz — wpisz odpowiedź</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="app">
+
+    <!-- Powrót do menu -->
+    <div class="topbar">
+      <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
+    </div>
+
+    <!-- SETUP VIEW -->
+    <section id="setupView" class="view setup card-like active" aria-labelledby="setupTitle">
+      <h1 id="setupTitle">Fiszki-Quiz — wprowadź pary i startuj</h1>
+      <p class="lead">
+        Wpisuj po jednej parze w wierszu, <strong>słówko</strong> i <strong>znaczenie</strong> rozdziel
+        <strong>średnikiem</strong> (<code>;</code>). Dopuszczalne wiele odpowiedzi po <code>|</code>.<br>
+        Np.: <em>engine; silnik|motor</em>
+      </p>
+
+      <textarea id="inputPairs" spellcheck="false" placeholder="engine; silnik|motor
+wheel; koło
+wrench; klucz"></textarea>
+
+      <div id="setupError" class="error hidden" role="alert"></div>
+
+      <div class="row" style="margin-top:12px; gap:8px">
+        <div class="notice">
+          Skróty: <span class="kbd">Enter</span> — sprawdź / dalej •
+          <span class="kbd">Esc</span> — wróć
+        </div>
+        <div style="display:flex; gap:8px; margin-left:auto; flex-wrap:wrap">
+          <button id="reviewBtn" class="btn secondary" type="button" title="Załaduj zestaw w terminie z pamięci">Tryb powtórki (0)</button>
+          <button id="clearReviewBtn" class="btn secondary" type="button" title="Wyczyść zapisaną pamięć SRS">Wyczyść pamięć</button>
+          <button id="sampleBtn" class="btn secondary" type="button">Wstaw przykładową listę</button>
+          <button id="oneOffBtn" class="btn secondary" type="button">Sesja jednorazowa</button>
+          <button id="startBtn" class="btn" type="button">Start (z pamięcią)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- GAME VIEW -->
+    <section id="gameView" class="view game card-like" aria-live="polite">
+      <div class="topbar">
+        <div class="progress" id="progress">Pozostało: 0</div>
+        <button id="backBtn" class="btn secondary" type="button" aria-label="Wróć do wprowadzania listy">↩︎ Wróć</button>
+      </div>
+
+      <div id="gameArea">
+        <h2 id="questionTerm" style="margin-top:0">—</h2>
+
+        <form id="answerForm" autocomplete="off">
+          <label for="answerInput">Twoja odpowiedź:</label>
+          <input id="answerInput" type="text" placeholder="wpisz tłumaczenie…" />
+          <div style="display:flex; gap:8px; margin-top:10px">
+            <button id="checkBtn" class="btn" type="submit">Sprawdź</button>
+            <button id="nextBtn" class="btn secondary hidden" type="button">Następna</button>
+          </div>
+        </form>
+
+        <div id="feedback" class="notice hidden" role="status" aria-live="polite"></div>
+      </div>
+
+      <div id="finishArea" class="result hidden">
+        <h2>Gotowe! 🎉</h2>
+        <p class="lead">Wszystkie fiszki zaliczone.</p>
+        <div style="display:flex; gap:8px; justify-content:center; margin-top:8px">
+          <button id="againBtn" class="btn" type="button">Zagraj ponownie</button>
+          <button id="restartBtn" class="btn secondary" type="button">Nowa talia</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+  <noscript>Ta aplikacja wymaga włączonego JavaScriptu.</noscript>
+</body>
+</html>
