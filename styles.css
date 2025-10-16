@@ -1,182 +1,565 @@
 /* ====== Christmas theme tokens ====== */
-:root{
-  --bg:#004d00;         /* zielone tło strony */
-  --surface:#d2232a;    /* czerwone panele / formy */
-  --text:#ffffff;       /* biały tekst */
-  --muted:#ffddb3;      /* delikatnie złotawe opisy */
-  --accent:#004d00;     /* zielone przyciski */
-  --ok:#2ecc71;
-  --bad:#ff6b6b;
-  --card:#b81f25;       /* ciemnoczerwone „kafle”/listy */
-  --shadow:0 10px 30px rgba(0,0,0,.35);
-  --radius:18px;
+:root {
+    --bg: #004d00; /* zielone tło strony */
+    --surface: #d2232a; /* czerwone panele / formy */
+    --text: #ffffff; /* biały tekst */
+    --muted: #ffddb3; /* delikatnie złotawe opisy */
+    --accent: #0b6a0b; /* zielone przyciski/kafelki */
+    --ok: #2ecc71;
+    --bad: #ff6b6b;
+    --card: #b81f25; /* ciemnoczerwone „kafle”/listy */
+    --gold: #ffcc00; /* złoto na akcenty */
+    --shadow: 0 10px 30px rgba(0,0,0,.35);
+    --radius: 18px;
 }
-@media (prefers-color-scheme: light){
-  :root{ /* w „jasnym” też zachowaj motyw świąteczny */
-    --bg:#004d00; --surface:#d2232a; --text:#ffffff; --muted:#ffddb3; --accent:#004d00; --card:#b81f25;
-  }
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg: #004d00;
+        --surface: #d2232a;
+        --text: #ffffff;
+        --muted: #ffddb3;
+        --accent: #0b6a0b;
+        --card: #b81f25;
+        --gold: #ffcc00;
+    }
 }
 
 /* ====== Base ====== */
-*{ box-sizing:border-box; }
-html,body{ height:100%; }
-body{
-  margin:0; padding:24px;
-  font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji";
-  color:var(--text); background:var(--bg);
+* {
+    box-sizing: border-box;
 }
-img{ max-width:100%; height:auto; display:block; }
-a{ color:inherit; text-decoration:none; }
-.hidden{ display:none !important; }
+
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    padding: 24px;
+    font: 16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji";
+    color: var(--text);
+    background: var(--bg);
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.hidden {
+    display: none !important;
+}
 
 /* ====== Layout containers ====== */
-.app, .container{ width:min(980px,100%); margin:0 auto; }
-.card-like{ background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; }
-.topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
-.back-link{ text-decoration:none; }
+.app, .container {
+    width: min(980px,100%);
+    margin: 0 auto;
+}
+
+.card-like {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.back-link {
+    text-decoration: none;
+}
 
 /* ====== Typography ====== */
-h1{ font-size:clamp(22px,2.4vw,30px); margin:0 0 12px; letter-spacing:.2px; }
-h2{ font-size:clamp(18px,2vw,24px); margin:12px 0; }
-p.lead, .notice{ margin:0 0 14px; color:var(--muted); }
-code{ background:rgba(255,255,255,.12); padding:.15em .35em; border-radius:6px; }
+h1 {
+    font-size: clamp(22px,2.4vw,30px);
+    margin: 0 0 12px;
+    letter-spacing: .2px;
+}
+
+h2 {
+    font-size: clamp(18px,2vw,24px);
+    margin: 12px 0;
+}
+
+p.lead, .notice {
+    margin: 0 0 14px;
+    color: var(--muted);
+}
+
+code {
+    background: rgba(255,255,255,.12);
+    padding: .15em .35em;
+    border-radius: 6px;
+}
 
 /* ====== Buttons ====== */
-/* ujednolicamy natywne <button> i .btn */
-button, .btn{
-  appearance:none; border:none; border-radius:12px; padding:10px 14px; font-weight:600; cursor:pointer;
-  background:var(--accent); color:#fff; box-shadow:var(--shadow);
-  transition: background-color .2s ease, color .2s ease;
+button, .btn {
+    appearance: none;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--accent);
+    color: #fff;
+    box-shadow: var(--shadow);
+    transition: background-color .2s ease, color .2s ease, transform .05s ease;
 }
-button:hover, .btn:hover{ filter:brightness(1.1); }
-button.secondary, .btn.secondary{ background:transparent; color:#ffcc00; border:1px solid #ffcc00; box-shadow:none; }
-button.success, .btn.success{ background:#2ecc71; }
-button.danger, .btn.danger{ background:#d9534f; }
-button:active, .btn:active{ transform:translateY(1px) scale(.99); }
-.row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
 
-/* ====== Forms (jak w Twoim CSS) ====== */
-form{
-  margin:20px 0;
-  background-color:var(--surface); color:#fff;
-  padding:20px; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.2);
+    button:hover, .btn:hover {
+        filter: brightness(1.1);
+    }
+
+    button.secondary, .btn.secondary {
+        background: transparent;
+        color: var(--gold);
+        border: 1px solid var(--gold);
+        box-shadow: none;
+    }
+
+    button.success, .btn.success {
+        background: var(--ok);
+    }
+
+    button.danger, .btn.danger {
+        background: #d9534f;
+    }
+
+    button:active, .btn:active {
+        transform: translateY(1px) scale(.99);
+    }
+
+.row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
 }
-form input, form textarea, form button{
-  display:block; width:100%; margin-bottom:10px; padding:10px;
-  border-radius:5px; border:none; font-size:16px;
+
+/* ====== Forms ====== */
+form {
+    margin: 20px 0;
+    background-color: var(--surface);
+    color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
-form input, form textarea{ background:#fff; color:#000; }
-form button{
-  background:#ffffff; color:#d2232a; font-weight:bold; cursor:pointer;
-  transition: background-color .3s ease, color .3s ease;
-}
-form button:hover{ background:#ffcccc; color:#000; }
+
+    form input, form textarea, form button {
+        display: block;
+        width: 100%;
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 5px;
+        border: none;
+        font-size: 16px;
+    }
+
+    form input, form textarea {
+        background: #fff;
+        color: #000;
+    }
+
+    form button {
+        background: #ffffff;
+        color: #d2232a;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color .3s ease, color .3s ease;
+    }
+
+        form button:hover {
+            background: #ffcccc;
+            color: #000;
+        }
 
 /* ====== Hub (Games list) ====== */
-.game-links, .list{ display:grid; gap:8px; margin:12px 0; }
-.game-button, .list a{
-  display:block; padding:12px 14px; border:1px solid rgba(255,255,255,.18);
-  border-radius:12px; color:#fff; background:var(--card); box-shadow:var(--shadow);
+.game-links, .list {
+    display: grid;
+    gap: 8px;
+    margin: 12px 0;
 }
-.game-button:hover, .list a:hover{ border-color:#ffcc00; }
+
+    .game-button, .list a {
+        display: block;
+        padding: 12px 14px;
+        border: 1px solid rgba(255,255,255,.18);
+        border-radius: 12px;
+        color: #fff;
+        background: var(--card);
+        box-shadow: var(--shadow);
+    }
+
+        .game-button:hover, .list a:hover {
+            border-color: var(--gold);
+        }
 
 /* ====== Tables (SRS details) ====== */
-.table-wrap{ overflow:auto; }
-.table{ width:100%; border-collapse:collapse; }
-.table th, .table td{
-  padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.25); text-align:left; vertical-align:top;
+.table-wrap {
+    overflow: auto;
 }
-.table th{ color:#ffcc00; }            /* złote nagłówki */
-.table tr:hover td{ background:rgba(0,0,0,.08); }
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+    .table th, .table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(255,255,255,.25);
+        text-align: left;
+        vertical-align: top;
+    }
+
+    .table th {
+        color: var(--gold);
+    }
+
+    .table tr:hover td {
+        background: rgba(0,0,0,.08);
+    }
+
+/* ====== Views ====== */
+.view {
+    display: none;
+}
+
+    .view.active {
+        display: block;
+    }
+
+.setup {
+    padding: 20px;
+}
+
+.game {
+    padding: 20px;
+    gap: 16px;
+}
+/* nie wymuszamy grid na .view */
+.progress {
+    color: var(--gold);
+    font-weight: 700;
+}
 
 /* ====== Flashcards (Fiszki) ====== */
-.view{ display:none; }
-.view.active{ display:block; }
-.setup{ padding:20px; }
-.game{ padding:20px; gap:16px; } /* bez display:grid – nie nadpisuje .view */
-.progress{ color:#ffcc00; font-weight:700; } /* złoty progress */
-
-.stage{ display:grid; place-items:center; padding:18px; }
-.flashcard{
-  width:min(680px, 96%); aspect-ratio:16/10; min-height:260px; cursor:pointer; outline:none;
-}
-.flashcard:focus-visible{ box-shadow:0 0 0 3px rgba(255,204,0,.45); }
-.card3d{
-  position:relative; width:100%; height:100%; border-radius:var(--radius);
-  background:var(--surface); /* czerwona karta -> biały tekst */
-  box-shadow:var(--shadow); display:block; padding:24px; color:#fff;
-}
-.face{ position:absolute; inset:0; display:grid; place-items:center; padding:28px; border-radius:var(--radius); }
-.front{ display:grid; } .back{ display:none; }
-.card3d.revealed .front{ display:none; } .card3d.revealed .back{ display:grid; }
-
-.term, .meaning{ font-size:clamp(22px,3.4vw,36px); text-align:center; font-weight:700; letter-spacing:.3px; }
-.hint{ position:absolute; bottom:10px; left:0; right:0; text-align:center; color:#ffcc80; font-size:.95rem; }
-
-.actions{ display:flex; gap:12px; justify-content:center; margin-top:14px; flex-wrap:wrap; }
-.actions button, .actions .btn{ min-width:140px; }
-
-/* ====== Verb-Match (drag&drop) ====== */
-.status-bar{
-  display:flex; gap:16px; align-items:center; justify-content:space-between;
-  padding:10px 12px; border:1px solid rgba(255,255,255,.25); border-radius:12px; background:var(--surface);
-  margin:12px 0; color:#fff;
-}
-.lives-container, .score-container{ display:flex; align-items:center; gap:12px; }
-#hearts-container{ display:flex; gap:6px; }
-
-/* siatki */
-.targets, .draggables{
-  display:grid; gap:10px; margin:12px 0;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-}
-.targets > div, .draggables > div{
-  background:#ffffff; color:#004d00;  /* białe kafelki jak w Memory */
-  border:1px solid rgba(0,0,0,.15); border-radius:12px;
-  padding:10px; min-height:44px; display:flex; align-items:center; justify-content:center; text-align:center;
-  user-select:none;
-}
-.targets > div{ outline:2px dashed rgba(0,0,0,.2); }
-.targets > div.drop-ok{ outline-color:#2ecc71; }
-.targets > div.drop-bad{ outline-color:#d9534f; }
-
-/* ====== Memory (pełne odwzorowanie Twoich kolorów) ====== */
-/* Scoreboard */
-#score-board{
-  display:flex; justify-content:center; gap:20px; margin-bottom:20px;
-  font-size:18px; color:#ffcc00; /* złoty */
-}
-.player-score{ font-weight:bold; }
-
-/* Turn indicator */
-#turn-indicator{
-  font-size:20px; color:#ffcc00; text-align:center; margin-bottom:20px;
+.stage {
+    display: grid;
+    place-items: center;
+    padding: 18px;
 }
 
-/* Board */
-#game-board{ display:grid; gap:10px; margin-top:20px; max-width:100%; }
-/* Responsywne kolumny jak w Twoim CSS */
-@media (min-width:1200px){ #game-board{ grid-template-columns: repeat(8, minmax(100px,1fr)); } }
-@media (min-width:900px) and (max-width:1199px){ #game-board{ grid-template-columns: repeat(6, minmax(100px,1fr)); } }
-@media (min-width:600px) and (max-width:899px){ #game-board{ grid-template-columns: repeat(4, minmax(100px,1fr)); } }
-@media (max-width:599px){ #game-board{ grid-template-columns: repeat(2, minmax(100px,1fr)); } }
-
-/* Karty Memory */
-.card{
-  width:100px; height:100px;
-  background:#ffffff; color:#004d00; /* biała karta z zielonym tekstem */
-  border-radius:8px; cursor:pointer; display:flex; justify-content:center; align-items:center;
-  font-size:18px; transition: background-color .3s ease, transform .3s ease;
-  box-shadow:0 4px 6px rgba(0,0,0,0.1);
-}
-.card:hover{ transform:scale(1.05); }
-.card.flipped{
-  background:#d2232a; color:#ffffff; font-weight:bold; cursor:default;
+.flashcard {
+    width: min(680px, 96%);
+    aspect-ratio: 16/10;
+    min-height: 260px;
+    cursor: pointer;
+    outline: none;
 }
 
-/* Ogólne przyciski poza formularzami (np. restart) */
-button{
-  background:#004d00; color:#ffffff; font-weight:bold; padding:10px 20px; border:none; border-radius:4px;
-  cursor:pointer; transition: background-color .3s ease, color .3s ease;
+    .flashcard:focus-visible {
+        box-shadow: 0 0 0 3px rgba(255,204,0,.45);
+    }
+
+.card3d {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    display: block;
+    padding: 24px;
+    color: #fff;
 }
-button:hover{ background:#ffcc00; color:#000; }
+
+.face {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 28px;
+    border-radius: var(--radius);
+}
+
+.front {
+    display: grid;
+}
+
+.back {
+    display: none;
+}
+
+.card3d.revealed .front {
+    display: none;
+}
+
+.card3d.revealed .back {
+    display: grid;
+}
+
+.term, .meaning {
+    font-size: clamp(22px,3.4vw,36px);
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: .3px;
+}
+
+.hint {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: #ffcc80;
+    font-size: .95rem;
+}
+
+.actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+
+    .actions button, .actions .btn {
+        min-width: 140px;
+    }
+
+/* ====== Memory ====== */
+#score-board {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 20px;
+    font-size: 18px;
+    color: var(--gold);
+}
+
+.player-score {
+    font-weight: bold;
+}
+
+#turn-indicator {
+    font-size: 20px;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#game-board {
+    display: grid;
+    gap: 10px;
+    margin-top: 20px;
+    max-width: 100%;
+}
+
+@media (min-width:1200px) {
+    #game-board {
+        grid-template-columns: repeat(8, minmax(100px,1fr));
+    }
+}
+
+@media (min-width:900px) and (max-width:1199px) {
+    #game-board {
+        grid-template-columns: repeat(6, minmax(100px,1fr));
+    }
+}
+
+@media (min-width:600px) and (max-width:899px) {
+    #game-board {
+        grid-template-columns: repeat(4, minmax(100px,1fr));
+    }
+}
+
+@media (max-width:599px) {
+    #game-board {
+        grid-template-columns: repeat(2, minmax(100px,1fr));
+    }
+}
+
+.card {
+    width: 100px;
+    height: 100px;
+    background: #ffffff;
+    color: #004d00;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+    transition: background-color .3s ease, transform .3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+    .card:hover {
+        transform: scale(1.05);
+    }
+
+    .card.flipped {
+        background: #d2232a;
+        color: #ffffff;
+        font-weight: bold;
+        cursor: default;
+    }
+
+/* ====== Verb-Match (działające jak „lokalny”, ale w świątecznej palecie) ====== */
+
+/* Anti-overlay: nic nie przykrywa planszy */
+.status-bar {
+    position: static;
+    z-index: 0;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    margin: 12px 0;
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 12px;
+    background: var(--surface);
+    color: #fff;
+}
+
+#game-section, .targets, .draggables {
+    position: relative;
+    z-index: 1;
+}
+
+    .target, .slot, .draggable, #game-section * {
+        pointer-events: auto;
+    }
+
+/* Pasek życia/wyniku */
+.lives-container, .score-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#hearts-container {
+    display: flex;
+}
+
+.heart-icon {
+    width: 30px;
+    height: 30px;
+    margin: 0 5px;
+}
+
+/* Uklad celów: kolumny jak w „lokalnym” */
+.targets {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.target {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #f9f9f9;
+}
+
+    .target h3 {
+        margin: 0 10px 0 0;
+        font-size: 1.1em;
+        color: #0d0d0d;
+    }
+
+/* Sloty jak w „lokalnym”, w kolorach świątecznych */
+.slot {
+    width: 150px;
+    height: 40px;
+    border: 2px dashed var(--accent);
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1em;
+    background-color: #f4f4f4;
+    color: #0d0d0d;
+    cursor: pointer;
+}
+
+/* Pula słów — kafelki */
+.draggables {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.draggable {
+    width: 150px;
+    height: 40px;
+    background-color: var(--accent);
+    color: #ffffff;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1em;
+    cursor: pointer;
+    user-select: none;
+}
+    /* Zaznaczony / błędny */
+    .draggable.selected {
+        background-color: #146114; /* ciemniejsza zieleń zamiast fioletu */
+    }
+
+    .draggable.incorrect {
+        background-color: var(--bad);
+    }
+
+/* Trafienia/błędy jak w „lokalnym” */
+.slot-correct {
+    border-color: #28a745 !important;
+    background-color: #e1f8e1;
+}
+
+.slot-incorrect {
+    border-color: #dc3545 !important;
+    background-color: #f9e1e1;
+}
+
+/* Ogólne przyciski poza formularzami (np. restart) – dopasowane do motywu */
+button {
+    background: #004d00;
+    color: #ffffff;
+    font-weight: bold;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color .3s ease, color .3s ease;
+}
+
+    button:hover {
+        background: var(--gold);
+        color: #000;
+    }

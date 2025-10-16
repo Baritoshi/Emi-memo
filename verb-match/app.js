@@ -1,3 +1,7 @@
+// =============================
+// Verb-Match — click-to-place (delegacja zdarzeñ)
+// =============================
+
 // Global Variables
 let verbs = [];
 let lives = 5;
@@ -17,36 +21,33 @@ const checkAnswersButton = document.getElementById("check-answers");
 const restartGameButton = document.getElementById("restart-game");
 const scoreDisplay = document.getElementById("score-display");
 
-// Update Lives Display
+// Helpers
 function updateLivesDisplay() {
     livesDisplay.textContent = lives;
-
-    // Clear existing hearts
     heartsContainer.innerHTML = "";
     for (let i = 0; i < lives; i++) {
         const heart = document.createElement("img");
-        heart.src = "https://img.icons8.com/emoji/48/heart-suit.png"; // Example heart icon
+        heart.src = "https://img.icons8.com/emoji/48/heart-suit.png";
         heart.classList.add("heart-icon");
+        heart.alt = "life";
         heartsContainer.appendChild(heart);
     }
 }
-
-// Update Score Display
 function updateScoreDisplay() {
     scoreDisplay.textContent = score;
 }
-
-// Simple shuffle function (Fisher-Yates)
 function shuffle(array) {
     let currentIndex = array.length, randomIndex;
     while (currentIndex !== 0) {
         randomIndex = Math.floor(Math.random() * currentIndex);
         currentIndex--;
-        [array[currentIndex], array[randomIndex]] = [
-            array[randomIndex], array[currentIndex]
-        ];
+        [array[currentIndex], array[randomIndex]] =
+            [array[randomIndex], array[currentIndex]];
     }
     return array;
+}
+function escapeHtml(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 // Initialize Game
@@ -56,9 +57,10 @@ function initGame() {
         return;
     }
 
-    // Reset containers
+    // Reset containers & state
     targetsContainer.innerHTML = "";
     draggablesContainer.innerHTML = "";
+    selectedWord = null;
     lives = 5;
     score = 0;
     updateLivesDisplay();
@@ -68,10 +70,8 @@ function initGame() {
     verbs.forEach(verb => {
         const target = document.createElement("div");
         target.classList.add("target");
-
-        // Show the infinitive as a label, with Past, Participle, Translation as slots
         target.innerHTML = `
-      <h3>${verb.infinitive}</h3>
+      <h3>${escapeHtml(verb.infinitive)}</h3>
       <div class="slot" data-answer="${verb.past.trim().toLowerCase()}"></div>
       <div class="slot" data-answer="${verb.participle.trim().toLowerCase()}"></div>
       <div class="slot" data-answer="${verb.translation.trim().toLowerCase()}"></div>
@@ -79,145 +79,88 @@ function initGame() {
         targetsContainer.appendChild(target);
     });
 
-    // Gather all the words you want to randomize (past, participle, translation)
+    // Gather, shuffle, and render all words (past, participle, translation)
     let allWords = verbs.flatMap(v => [
         v.past.trim(),
         v.participle.trim(),
         v.translation.trim()
     ]);
-
-    // Shuffle the words
     allWords = shuffle(allWords);
 
-    // Create draggable elements
     allWords.forEach(word => {
         const draggable = document.createElement("div");
         draggable.classList.add("draggable");
         draggable.textContent = word;
         draggablesContainer.appendChild(draggable);
-
-        // Click-to-select logic
-        draggable.addEventListener("click", () => {
-            // If this word is already selected, deselect it
-            if (selectedWord === draggable) {
-                draggable.classList.remove("selected");
-                selectedWord = null;
-            } else {
-                // Deselect any previously selected word
-                if (selectedWord) {
-                    selectedWord.classList.remove("selected");
-                }
-                // Select this one
-                draggable.classList.add("selected");
-                selectedWord = draggable;
-            }
-        });
-    });
-
-    // Allow slots to be clicked so the selected word can be placed
-    document.querySelectorAll(".slot").forEach(slot => {
-        slot.addEventListener("click", () => {
-            if (selectedWord) {
-                // If there's already a word in the slot, swap them back to the pool
-                if (slot.textContent.trim() !== "") {
-                    const existingWord = slot.textContent.trim();
-                    const newDraggable = document.createElement("div");
-                    newDraggable.classList.add("draggable");
-                    newDraggable.textContent = existingWord;
-                    draggablesContainer.appendChild(newDraggable);
-
-                    // Re-attach the click-to-select logic
-                    newDraggable.addEventListener("click", () => {
-                        if (selectedWord === newDraggable) {
-                            newDraggable.classList.remove("selected");
-                            selectedWord = null;
-                        } else {
-                            if (selectedWord) {
-                                selectedWord.classList.remove("selected");
-                            }
-                            newDraggable.classList.add("selected");
-                            selectedWord = newDraggable;
-                        }
-                    });
-                }
-
-                // Place the selected word in the slot
-                slot.textContent = selectedWord.textContent;
-
-                // Remove the draggable from the pool
-                selectedWord.remove();
-                selectedWord = null;
-            }
-        });
     });
 
     // Show the game section
+    inputSection.style.display = "none";
     gameSection.style.display = "block";
 }
 
-// Handle Form Submission
-// ...
+// === Delegacja zdarzeñ ===
 
+// 1) Wybór kafelka z puli
+draggablesContainer.addEventListener("click", (e) => {
+    const tile = e.target.closest(".draggable");
+    if (!tile || !draggablesContainer.contains(tile)) return;
+
+    if (selectedWord === tile) {
+        tile.classList.remove("selected");
+        selectedWord = null;
+    } else {
+        if (selectedWord) selectedWord.classList.remove("selected");
+        tile.classList.add("selected");
+        selectedWord = tile;
+    }
+});
+
+// 2) Wstawienie do slotu
+targetsContainer.addEventListener("click", (e) => {
+    const slot = e.target.closest(".slot");
+    if (!slot || !targetsContainer.contains(slot)) return;
+    if (!selectedWord) return;
+
+    // Je¿eli slot ju¿ coœ zawiera — oddaj z powrotem do puli
+    const existing = slot.textContent.trim();
+    if (existing) {
+        const back = document.createElement("div");
+        back.classList.add("draggable");
+        back.textContent = existing;
+        draggablesContainer.appendChild(back);
+    }
+
+    // Wstaw wybrane s³owo
+    slot.textContent = selectedWord.textContent;
+
+    // Usuñ kafelek z puli i wyczyœæ zaznaczenie
+    selectedWord.remove();
+    selectedWord = null;
+});
+
+// Handle Form Submission
 addVerbsForm.addEventListener("submit", (e) => {
     e.preventDefault();
 
-    // Split the input into lines
     const lines = verbsInputField.value.trim().split("\n");
-
-    // We'll use a temporary array to store new valid verbs
     const newVerbsArray = [];
-
-    // A set to check duplicates by a "signature"
-    // (concatenating all 4 forms in lowercase)
     const existingSignatures = new Set();
 
-    // If you're appending new verbs each time,
-    // you might want to also include existing verbs in the set so you don’t add duplicates
-    // between multiple submissions. For example:
-    //   verbs.forEach(v => {
-    //     const sig = createSignature(v.infinitive, v.past, v.participle, v.translation);
-    //     existingSignatures.add(sig);
-    //   });
-    // 
-    // If you prefer clearing old verbs when the user re-submits, skip that step.
-
-    // Go line by line
     for (const line of lines) {
         const trimmedLine = line.trim();
+        if (!trimmedLine) continue;
 
-        // Skip if line is empty
-        if (!trimmedLine) {
-            continue;
-        }
-
-        // Split into parts
+        // format: infinitive;past;participle;translation
         const parts = trimmedLine.split(";").map((p) => p.trim());
-
-        // Check if we have exactly 4 items: [inf, past, part, trans]
-        if (parts.length !== 4) {
-            // Optionally, show a warning or simply skip
-            //alert(`Skipping invalid line (must have 4 parts): "${line}"`);
-            continue;
-        }
+        if (parts.length !== 4) continue;
 
         const [inf, past, part, trans] = parts;
+        if (!inf || !past || !part || !trans) continue;
 
-        // Skip if any of the parts is empty
-        if (!inf || !past || !part || !trans) {
-            //alert(`Skipping line with blank fields: "${line}"`);
-            continue;
-        }
-
-        // Build a "signature" to detect duplicates
         const signature = createSignature(inf, past, part, trans);
+        if (existingSignatures.has(signature)) continue;
 
-        // Check if this verb set was already added
-        if (existingSignatures.has(signature)) {
-            //alert(`Duplicate verb entry found. Skipping: "${line}"`);
-            continue;
-        }
-
-        // If it’s new, add to the temporary array and mark signature
         existingSignatures.add(signature);
         newVerbsArray.push({
             infinitive: inf,
@@ -227,24 +170,16 @@ addVerbsForm.addEventListener("submit", (e) => {
         });
     }
 
-    // If no valid lines, optionally warn the user
     if (newVerbsArray.length === 0) {
         alert("No valid verbs added. Please check your input.");
         return;
     }
 
-    // Now either append these to the existing 'verbs' array or replace entirely
-    // If you want to REPLACE the entire list:
+    // Replace the list (jeœli chcesz dok³adaæ: verbs = [...verbs, ...newVerbsArray])
     verbs = newVerbsArray;
 
-    // Or if you want to APPEND to existing:
-    // verbs = [...verbs, ...newVerbsArray];
-
-    // Clear the input and hide the input section
+    // Clear the input and start the game
     verbsInputField.value = "";
-    inputSection.style.display = "none";
-
-    // Start or re-init the game
     initGame();
 });
 
@@ -255,11 +190,8 @@ function createSignature(inf, past, part, trans) {
         past.toLowerCase(),
         part.toLowerCase(),
         trans.toLowerCase(),
-    ].join("-");
+    ].join("§");
 }
-
-// ...
-
 
 // Check Answers
 checkAnswersButton.addEventListener("click", () => {
@@ -269,29 +201,22 @@ checkAnswersButton.addEventListener("click", () => {
 
     slots.forEach(slot => {
         const placedWord = slot.textContent.trim().toLowerCase();
-        const correctWord = slot.dataset.answer.trim().toLowerCase();
+        const correctWord = (slot.dataset.answer || "").trim().toLowerCase();
 
-        // If the slot is empty, it's definitely not correct
         if (!placedWord) {
             allCorrect = false;
             anyIncorrect = true;
-            // Optional: visually mark empty slots
             slot.classList.remove("slot-correct");
             slot.classList.add("slot-incorrect");
-            // Score: minus 5 for empty/incorrect
             score -= 5;
             return;
         }
 
-        // Check correctness
         if (placedWord === correctWord) {
-            // Mark visually as correct
             slot.classList.add("slot-correct");
             slot.classList.remove("slot-incorrect");
-            // Score: plus 10 for correct
             score += 10;
         } else {
-            // Mark visually as incorrect
             slot.classList.remove("slot-correct");
             slot.classList.add("slot-incorrect");
 
@@ -301,34 +226,17 @@ checkAnswersButton.addEventListener("click", () => {
             wordDiv.textContent = slot.textContent;
             draggablesContainer.appendChild(wordDiv);
 
-            // Rebind click-to-select
-            wordDiv.addEventListener("click", () => {
-                if (selectedWord === wordDiv) {
-                    wordDiv.classList.remove("selected");
-                    selectedWord = null;
-                } else {
-                    if (selectedWord) {
-                        selectedWord.classList.remove("selected");
-                    }
-                    wordDiv.classList.add("selected");
-                    selectedWord = wordDiv;
-                }
-            });
-
-            // Clear the slot
+            // Wyczyœæ slot
             slot.textContent = "";
 
             allCorrect = false;
             anyIncorrect = true;
-            // Score: minus 5 for incorrect
             score -= 5;
         }
     });
 
-    // Update score display after evaluating all slots
     updateScoreDisplay();
 
-    // If there were any incorrect answers, lose 1 life
     if (anyIncorrect) {
         lives--;
         updateLivesDisplay();
@@ -339,9 +247,9 @@ checkAnswersButton.addEventListener("click", () => {
         }
     }
 
-    // If everything was correct, show success message
     if (allCorrect && !anyIncorrect) {
         score += 50;
+        updateScoreDisplay();
         alert(`Well Done!\nYour final score is: ${score}`);
     }
 });
@@ -351,7 +259,6 @@ restartGameButton.addEventListener("click", () => {
     restartGame();
 });
 
-// Utility function to reset the entire game
 function restartGame() {
     inputSection.style.display = "block";
     gameSection.style.display = "none";
@@ -363,5 +270,6 @@ function restartGame() {
     updateLivesDisplay();
     updateScoreDisplay();
     verbs = [];
+    if (selectedWord) selectedWord.classList.remove("selected");
     selectedWord = null;
 }
