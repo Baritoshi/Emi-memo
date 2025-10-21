@@ -54,6 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Preferencje porównywania
     const PREFS_KEY = 'quiz_prefs_v1';
 
+    // LIMIT SESJI (NOWE – jak w klasycznych fiszkach)
+    const MAX_SESSION_CARDS = 15;
+
     const storage = {
         get() {
             try {
@@ -96,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     })();
 
-    // --- Normalizacja i porównanie (zależne od preferencji) ---
+    // --- Normalizacja i porównanie ---
     function canon(s) {
         return String(s || '')
             .toLowerCase()
@@ -221,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
         downloadBlob(`srs-export-${stamp}.json`, JSON.stringify(payload, null, 2));
     }
 
-    // === MERGE przy imporcie: duplikaty po term|meaning -> box=max, dueAt=min ===
+    // MERGE przy imporcie: duplikaty po term|meaning -> box=max, dueAt=min
     async function importSRSFile(file) {
         if (!file) return;
         try {
@@ -312,6 +315,19 @@ document.addEventListener('DOMContentLoaded', () => {
             pairs.push({ term, meaning });
         });
         return { pairs, errors };
+    }
+
+    // NOWE: ostrzeżenie i blokada > 15
+    function showLimitMessage(pairs) {
+        const over = pairs.length - MAX_SESSION_CARDS;
+        const extra = pairs
+            .slice(MAX_SESSION_CARDS, MAX_SESSION_CARDS + 10)
+            .map(p => `&bull; ${escapeHtml(p.term)} — ${escapeHtml(p.meaning)}`)
+            .join('<br>');
+        setupError.classList.remove('hidden');
+        setupError.innerHTML =
+            `Masz ${pairs.length} par, a limit jednej sesji to ${MAX_SESSION_CARDS}. Usuń ${over} pozycj${over === 1 ? 'ę' : 'e'} i spróbuj ponownie.` +
+            (extra ? `<br><br>Nadmiar (pierwsze 10):<br>${extra}` : '');
     }
 
     function show(view) {
@@ -411,6 +427,13 @@ document.addEventListener('DOMContentLoaded', () => {
             setupError.textContent = 'Dodaj przynajmniej jedną parę.';
             return;
         }
+
+        // LIMIT 15 – blokada + lista nadmiaru
+        if (pairs.length > MAX_SESSION_CARDS) {
+            showLimitMessage(pairs);
+            return;
+        }
+
         setupError.classList.add('hidden');
         startWithPairs(pairs, mode);
     }
@@ -422,8 +445,16 @@ document.addEventListener('DOMContentLoaded', () => {
             setupError.textContent = 'Brak kart „na dziś” w SRS.';
             return;
         }
+        const pairs = due.map(({ term, meaning }) => ({ term, meaning }));
+
+        // LIMIT 15 – dla trybu powtórki również
+        if (pairs.length > MAX_SESSION_CARDS) {
+            showLimitMessage(pairs);
+            return;
+        }
+
         setupError.classList.add('hidden');
-        startWithPairs(due.map(({ term, meaning }) => ({ term, meaning })), 'review');
+        startWithPairs(pairs, 'review');
     }
 
     // submit odpowiedzi
@@ -436,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
         wasCorrect = ok;
         answered = true;
 
-        // statystyki: zlicz próbę dla tej karty i globalnie
+        // statystyki
         current.attempts = (current.attempts || 0) + 1;
         totalAttempts++;
 
