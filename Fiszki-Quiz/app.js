@@ -196,14 +196,13 @@ document.addEventListener('DOMContentLoaded', () => {
         a.remove(); URL.revokeObjectURL(url);
     }
     function sanitizeCards(arr) {
-        return (Array.isArray(arr) ? arr : []).filter(x =>
-            x && typeof x.term === 'string' && typeof x.meaning === 'string' &&
-            Number.isFinite(+x.box) && Number.isFinite(+x.dueAt)
-        ).map(x => ({
-            term: String(x.term), meaning: String(x.meaning),
-            box: Math.min(5, Math.max(1, parseInt(x.box, 10) || 1)),
-            dueAt: parseInt(x.dueAt, 10) || Date.now()
-        }));
+        return (Array.isArray(arr) ? arr : [])
+            .filter(x => x && typeof x.term === 'string' && typeof x.meaning === 'string')
+            .map(x => ({
+                term: String(x.term), meaning: String(x.meaning),
+                box: Math.min(5, Math.max(1, parseInt(x.box, 10) || 1)),
+                dueAt: Number.isFinite(+x.dueAt) ? parseInt(x.dueAt, 10) : Date.now()
+            }));
     }
     function exportSRS(datasetName = 'Zestaw SRS') {
         const payload = {
@@ -214,17 +213,54 @@ document.addEventListener('DOMContentLoaded', () => {
         const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
         downloadBlob(`srs-export-${stamp}.json`, JSON.stringify(payload, null, 2));
     }
+
+    // === MERGE przy imporcie: duplikaty po term|meaning -> box=max, dueAt=min ===
     async function importSRSFile(file) {
         if (!file) return;
         try {
             const text = await file.text();
             const json = JSON.parse(text);
             if (json?.schema !== EXPORT_SCHEMA) { alert('Nieprawidłowy plik (schema).'); return; }
-            const cards = sanitizeCards(json.cards);
-            if (cards.length === 0) { alert('Brak kart do importu.'); return; }
-            storage.set(cards);
+
+            const incoming = sanitizeCards(json.cards);
+            if (incoming.length === 0) { alert('Brak kart do importu.'); return; }
+
+            const existing = readAll();
+            const map = new Map(existing.map(c => [keyOf(c), c]));
+
+            let added = 0, updated = 0;
+            for (const inc of incoming) {
+                const k = keyOf(inc);
+                if (map.has(k)) {
+                    const ex = map.get(k);
+                    const merged = {
+                        term: ex.term, meaning: ex.meaning,
+                        box: Math.max(ex.box || 1, inc.box || 1),
+                        dueAt: Math.min(
+                            Number.isFinite(+ex.dueAt) ? +ex.dueAt : Date.now(),
+                            Number.isFinite(+inc.dueAt) ? +inc.dueAt : Date.now()
+                        )
+                    };
+                    map.set(k, merged);
+                    updated++;
+                } else {
+                    map.set(k, inc);
+                    added++;
+                }
+            }
+
+            const mergedArr = Array.from(map.values());
+            storage.set(mergedArr);
             updateReviewBadge();
-            alert(`Zaimportowano ${cards.length} kart z zestawu: "${json?.meta?.datasetName || 'bez nazwy'}".`);
+
+            alert(
+                `Import zakończony.\n` +
+                `Zestaw: ${json?.meta?.datasetName || 'bez nazwy'}\n` +
+                `Wczytano: ${incoming.length}\n` +
+                `Dodano nowych: ${added}\n` +
+                `Zaktualizowano istniejące: ${updated}\n` +
+                `Razem w pamięci: ${mergedArr.length}`
+            );
         } catch (err) {
             console.error(err); alert('Import nieudany (czy to poprawny JSON?).');
         } finally { if (importFile) importFile.value = ''; }
@@ -238,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (importFile) importFile.addEventListener('change', (e) => importSRSFile(e.target.files?.[0]));
 
     /* -------------- stan gry -------------- */
-    const MAX_SESSION_CARDS = 15; // jeśli używasz limitu — zostaje, ale nie blokujemy tutaj
+    const MAX_SESSION_CARDS = 15; // limit istnieje, ale tutaj nie blokujemy
     let deck = [];        // [{ term, meaning, failedBefore }]
     let queue = [];
     let current = null;
@@ -421,7 +457,7 @@ spark plug; świeca zapłonowa`;
         inputPairs.focus();
     });
 
-    $('backBtn')?.addEventListener('click', () => { show(setupView); updateReviewBadge(); });
+    backBtn?.addEventListener('click', () => { show(setupView); updateReviewBadge(); });
 
     againBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
