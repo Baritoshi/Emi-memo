@@ -8,21 +8,16 @@
     <script src="app.js" defer></script>
 </head>
 <body>
-
-
+    <!-- Powrót do menu (ujednolicony z innymi grami) -->
+    <div class="topbar">
+        <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
+    </div>
 
     <main class="app">
 
-        <!-- Back to menu -->
-        <div class="topbar">
-            <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
-        </div>
-
         <!-- SETUP VIEW -->
         <section id="setupView" class="view setup card-like active" aria-labelledby="setupTitle">
-            <div class="topbar">
-                <h1 id="setupTitle" style="margin:0">Fiszki-Quiz — wprowadź pary i startuj</h1>
-            </div>
+            <h1 id="setupTitle">Fiszki-Quiz — wprowadź pary i startuj</h1>
 
             <p class="lead">
                 Wpisuj po jednej parze w wierszu, <strong>słówko</strong> i <strong>znaczenie</strong> rozdziel
@@ -72,10 +67,7 @@ spark plug; świeca zapłonowa"></textarea>
         <section id="gameView" class="view game card-like" aria-live="polite">
             <div class="topbar">
                 <div class="progress" id="progress">Pozostało: 0</div>
-                <div style="display:flex; gap:8px">
-                    <a href="../index.html" class="btn secondary back-link" title="Powrót do menu gier">Menu</a>
-                    <button id="backBtn" class="btn secondary" type="button" aria-label="Wróć do wprowadzania listy">↩︎ Wróć</button>
-                </div>
+                <button id="backBtn" class="btn secondary" type="button" aria-label="Wróć do wprowadzania listy">↩︎ Wróć</button>
             </div>
 
             <div id="gameArea" class="stage">
@@ -93,46 +85,26 @@ spark plug; świeca zapłonowa"></textarea>
                 </div>
             </div>
 
-            <div id="finishArea" class="result hidden">
+            <div id="finishArea" class="result hidden" style="max-width:720px; margin: 12px auto 0;">
                 <h2>Gotowe! 🎉</h2>
-                <p class="lead">Wszystkie fiszki zaliczone.</p>
+                <p class="lead" id="finishLead">Wszystkie fiszki zaliczone.</p>
+
+                <!-- Statystyki sesji -->
+                <div class="card-like" style="margin-top:8px">
+                    <h3 style="margin-top:0">Statystyki sesji</h3>
+                    <ul style="margin:8px 0 0 18px; line-height:1.6">
+                        <li>Za 1. razem: <strong><span id="statFirstTry">0</span></strong> / <span id="statTotal">0</span> (<span id="statPercent">0%</span>)</li>
+                        <li>Czas trwania: <strong><span id="statDuration">0:00</span></strong></li>
+                        <li>Wszystkich prób (łącznie z powtórkami): <strong><span id="statTotalAttempts">0</span></strong></li>
+                        <li>Średnia prób na kartę: <strong><span id="statAvgAttempts">0.00</span></strong></li>
+                    </ul>
+                </div>
+
                 <div style="display:flex; gap:8px; justify-content:center; margin-top:8px">
                     <button id="againBtn" class="btn" type="button">Zagraj ponownie</button>
                     <button id="restartBtn" class="btn secondary" type="button">Nowa talia</button>
                     <a href="../index.html" class="btn secondary back-link">↩︎ Menu gier</a>
                 </div>
-            </div>
-        </section>
-
-        <!-- SRS DETAILS VIEW -->
-        <section id="srsView" class="view setup card-like" aria-labelledby="srsTitle">
-            <div class="topbar">
-                <h1 id="srsTitle" style="margin:0">Pamięć (Leitner) — szczegóły</h1>
-                <a href="../index.html" class="btn secondary back-link" title="Powrót do menu gier">↩︎ Menu gier</a>
-            </div>
-
-            <p class="lead">
-                Razem: <strong><span id="srsCount2">0</span></strong> •
-                Do powtórki dziś: <strong><span id="srsDue2">0</span></strong>
-            </p>
-
-            <div class="table-wrap" style="margin-top:8px">
-                <table class="table" id="srsTable">
-                    <thead>
-                        <tr>
-                            <th>Słówko</th>
-                            <th>Znaczenie</th>
-                            <th>Pudełko</th>
-                            <th>Następna powtórka</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-
-            <div style="display:flex; gap:8px; margin-top:16px">
-                <button id="srsBackBtn" class="btn secondary" type="button">↩︎ Wróć</button>
-                <a href="../index.html" class="btn secondary back-link">↩︎ Menu gier</a>
             </div>
         </section>
 

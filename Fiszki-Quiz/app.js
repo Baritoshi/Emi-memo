@@ -36,6 +36,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const againBtn = $('againBtn');
     const restartBtn = $('restartBtn');
 
+    // Stats UI
+    const finishLead = $('finishLead');
+    const statFirstTry = $('statFirstTry');
+    const statTotal = $('statTotal');
+    const statPercent = $('statPercent');
+    const statDuration = $('statDuration');
+    const statTotalAttempts = $('statTotalAttempts');
+    const statAvgAttempts = $('statAvgAttempts');
+
     /* ---------- SRS Leitner (5 pudełek, dni: 1,2,4,8,16) ---------- */
     const STORAGE_KEY = 'flash_srs_v1'; // wspólna baza z klasycznymi fiszkami
     const MAX_BOX = 5;
@@ -130,11 +139,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const tol = Math.max(0, Math.min(3, parseInt(p.tol, 10) || 0));
 
         const u = canon(user);
-        // Jeśli łagodne porównanie wyłączone: wymagamy dokładnego dopasowania po kanonizacji
         if (!useLenient) {
             return variants.some(v => u === canon(v));
         }
-        // Jeśli włączone: dopuszczamy dystans Levenshteina <= tol (0..3) po kanonizacji
         return variants.some(v => {
             const e = canon(v);
             if (u === e) return true;
@@ -273,15 +280,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (importBtn) importBtn.addEventListener('click', () => importFile?.click());
     if (importFile) importFile.addEventListener('change', (e) => importSRSFile(e.target.files?.[0]));
 
-    /* -------------- stan gry -------------- */
-    const MAX_SESSION_CARDS = 15; // limit istnieje, ale tutaj nie blokujemy
-    let deck = [];        // [{ term, meaning, failedBefore }]
+    /* -------------- stan gry + statystyki -------------- */
+    let deck = [];        // [{ term, meaning, failedBefore, attempts }]
     let queue = [];
     let current = null;
     let answered = false;
     let wasCorrect = null;
     let firstTryCount = 0;
     let totalCards = 0;
+
+    // statystyki sesji
+    let sessionStart = 0;
+    let totalAttempts = 0; // wszystkie próby (łącznie z powtórkami)
 
     // tryby: 'srs' | 'oneoff' | 'review'
     let sessionMode = 'srs';
@@ -336,12 +346,32 @@ document.addEventListener('DOMContentLoaded', () => {
         loadCard(n);
     }
 
+    function fmtDuration(ms) {
+        const s = Math.max(0, Math.floor(ms / 1000));
+        const m = Math.floor(s / 60);
+        const sec = s % 60;
+        return `${m}:${sec.toString().padStart(2, '0')}`;
+    }
+
     function finish() {
+        const durationMs = Date.now() - sessionStart;
+
         gameArea.classList.add('hidden');
         finishArea.classList.remove('hidden');
+
         const pct = totalCards ? Math.round((firstTryCount / totalCards) * 100) : 0;
-        const lead = finishArea.querySelector('.lead');
-        if (lead) lead.textContent = `Wszystkie fiszki zaliczone. Trafienia za 1. razem: ${firstTryCount}/${totalCards} (${pct}%).`;
+        const avgAttempts = totalCards ? (totalAttempts / totalCards) : 0;
+
+        if (finishLead) {
+            finishLead.textContent = `Wszystkie fiszki zaliczone. Trafienia za 1. razem: ${firstTryCount}/${totalCards} (${pct}%).`;
+        }
+        if (statFirstTry) statFirstTry.textContent = String(firstTryCount);
+        if (statTotal) statTotal.textContent = String(totalCards);
+        if (statPercent) statPercent.textContent = `${pct}%`;
+        if (statDuration) statDuration.textContent = fmtDuration(durationMs);
+        if (statTotalAttempts) statTotalAttempts.textContent = String(totalAttempts);
+        if (statAvgAttempts) statAvgAttempts.textContent = avgAttempts.toFixed(2);
+
         updateReviewBadge();
     }
 
@@ -355,10 +385,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function startWithPairs(pairs, mode) {
         sessionMode = mode;
-        deck = shuffle(pairs.map(p => ({ ...p, failedBefore: false })));
+        deck = shuffle(pairs.map(p => ({ ...p, failedBefore: false, attempts: 0 })));
         queue = deck.slice();
         totalCards = deck.length;
         firstTryCount = 0;
+        totalAttempts = 0;
+        sessionStart = Date.now();
 
         gameArea.classList.remove('hidden');
         finishArea.classList.add('hidden');
@@ -403,6 +435,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const ok = isCorrectAnswer(userAns, current.meaning);
         wasCorrect = ok;
         answered = true;
+
+        // statystyki: zlicz próbę dla tej karty i globalnie
+        current.attempts = (current.attempts || 0) + 1;
+        totalAttempts++;
 
         if (ok) {
             feedback.textContent = '✅ Dobrze!';
@@ -461,9 +497,12 @@ spark plug; świeca zapłonowa`;
 
     againBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
-        deck.forEach(c => c.failedBefore = false);
+        deck.forEach(c => { c.failedBefore = false; c.attempts = 0; });
         queue = shuffle(deck.slice());
         firstTryCount = 0;
+        totalAttempts = 0;
+        sessionStart = Date.now();
+
         gameArea.classList.remove('hidden');
         finishArea.classList.add('hidden');
         nextCard();

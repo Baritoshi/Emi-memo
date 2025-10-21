@@ -1,4 +1,4 @@
-// Fiszki — pełny app.js z MERGE przy imporcie, limitem 15, trybem one-off i SRS (5 pudełek)
+// Fiszki — app.js z MERGE importem + statystyki sesji
 document.addEventListener('DOMContentLoaded', () => {
     const byId = (id) => document.getElementById(id);
 
@@ -46,6 +46,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const actions = byId('actions');
     const knowBtn = byId('knowBtn');
     const dontKnowBtn = byId('dontKnowBtn');
+
+    // Stats UI (nowe)
+    const finishLead = byId('finishLead');
+    const statFirstTry = byId('statFirstTry');
+    const statTotal = byId('statTotal');
+    const statPercent = byId('statPercent');
+    const statDuration = byId('statDuration');
+    const statTotalAttempts = byId('statTotalAttempts');
+    const statAvgAttempts = byId('statAvgAttempts');
 
     /* ---------- SRS Leitner (5 pudełek, dni: 1,2,4,8,16) ---------- */
     const STORAGE_KEY = 'flash_srs_v1';          // wspólna pamięć dla obu gier
@@ -220,14 +229,18 @@ document.addEventListener('DOMContentLoaded', () => {
     importBtn?.addEventListener('click', () => importFile?.click());
     importFile?.addEventListener('change', (e) => importSRSFile(e.target.files?.[0]));
 
-    /* -------------- stan gry -------------- */
+    /* -------------- stan gry + statystyki -------------- */
     const MAX_SESSION_CARDS = 15; // LIMIT 15 na sesję
-    let deck = [];          // [{ term, meaning, failedBefore }]
+    let deck = [];          // [{ term, meaning, failedBefore, attempts }]
     let queue = [];
     let current = null;
     let revealed = false;
     let firstTryCount = 0;
     let totalCards = 0;
+
+    // statystyki sesji
+    let sessionStart = 0;
+    let totalAttempts = 0; // każde kliknięcie Umiem/Nie umiem
 
     // tryb sesji: 'srs' | 'oneoff' | 'review'
     let sessionMode = 'srs';
@@ -286,13 +299,30 @@ document.addEventListener('DOMContentLoaded', () => {
         loadCard(n);
     }
 
+    function fmtDuration(ms) {
+        const s = Math.max(0, Math.floor(ms / 1000));
+        const m = Math.floor(s / 60);
+        const sec = s % 60;
+        return `${m}:${sec.toString().padStart(2, '0')}`;
+    }
+
     function finish() {
+        const durationMs = Date.now() - sessionStart;
+
         gameArea.classList.add('hidden');
         finishArea.classList.remove('hidden');
+
         const pct = totalCards ? Math.round((firstTryCount / totalCards) * 100) : 0;
-        const lead = finishArea.querySelector('.lead');
-        if (lead) lead.textContent = `Wszystkie fiszki zaliczone. Trafienia za 1. razem: ${firstTryCount}/${totalCards} (${pct}%).`;
-        alert(`Wynik: ${firstTryCount}/${totalCards} (${pct}%)`);
+        const avgAttempts = totalCards ? (totalAttempts / totalCards) : 0;
+
+        if (finishLead) finishLead.textContent = `Wszystkie fiszki zaliczone. Trafienia za 1. razem: ${firstTryCount}/${totalCards} (${pct}%).`;
+        if (statFirstTry) statFirstTry.textContent = String(firstTryCount);
+        if (statTotal) statTotal.textContent = String(totalCards);
+        if (statPercent) statPercent.textContent = `${pct}%`;
+        if (statDuration) statDuration.textContent = fmtDuration(durationMs);
+        if (statTotalAttempts) statTotalAttempts.textContent = String(totalAttempts);
+        if (statAvgAttempts) statAvgAttempts.textContent = avgAttempts.toFixed(2);
+
         updateProgress();
         updateReviewBadge();
         refreshSrsSummary();
@@ -320,10 +350,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function startWithPairs(pairs, mode) {
         sessionMode = mode;
 
-        deck = shuffle(pairs.map(p => ({ ...p, failedBefore: false })));
+        deck = shuffle(pairs.map(p => ({ ...p, failedBefore: false, attempts: 0 })));
         queue = deck.slice();
         totalCards = deck.length;
         firstTryCount = 0;
+        totalAttempts = 0;
+        sessionStart = Date.now();
 
         gameArea.classList.remove('hidden');
         finishArea.classList.add('hidden');
@@ -346,7 +378,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // LIMIT — zablokuj start i pokaż nadmiar
         if (pairs.length > MAX_SESSION_CARDS) {
             showLimitMessage(pairs);
             return;
@@ -432,7 +463,9 @@ coolant; płyn chłodniczy`;
     againBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
         firstTryCount = 0;
-        deck.forEach(c => c.failedBefore = false);
+        totalAttempts = 0;
+        sessionStart = Date.now();
+        deck.forEach(c => { c.failedBefore = false; c.attempts = 0; });
         queue = shuffle(deck.slice()); // ponownie tasuj
         gameArea.classList.remove('hidden');
         finishArea.classList.add('hidden');
@@ -450,6 +483,11 @@ coolant; płyn chłodniczy`;
     knowBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
         if (!revealed) return;
+
+        // statystyki
+        current.attempts = (current.attempts || 0) + 1;
+        totalAttempts++;
+
         if (!current.failedBefore) firstTryCount++;
         if (sessionMode !== 'oneoff') promote(current);
         nextCard();
@@ -458,6 +496,11 @@ coolant; płyn chłodniczy`;
     dontKnowBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
         if (!revealed) return;
+
+        // statystyki
+        current.attempts = (current.attempts || 0) + 1;
+        totalAttempts++;
+
         current.failedBefore = true;
         queue.push(current);
         if (sessionMode !== 'oneoff') demote(current);

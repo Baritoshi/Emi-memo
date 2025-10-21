@@ -1,128 +1,143 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Fiszki — szybka gra</title>
-  <link rel="stylesheet" href="../styles.css" />
-  <script src="app.js" defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fiszki — szybka gra</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <script src="app.js" defer></script>
 </head>
 <body>
-  <main class="app">
-
-    <!-- Powrót do menu -->
+    <!-- Powrót do menu (spójny z innymi grami) -->
     <div class="topbar">
-      <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
+        <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
     </div>
 
-    <!-- SETUP VIEW -->
-    <section id="setupView" class="view setup card-like active" aria-labelledby="setupTitle">
-      <h1 id="setupTitle">Fiszki — wprowadź pary i startuj</h1>
-      <p class="lead">
-        Wpisuj po jednej parze w wierszu, <strong>słówko</strong> i <strong>znaczenie</strong> rozdziel
-        <strong>średnikiem</strong> (<code>;</code>). Np.: <em>engine; silnik</em>
-      </p>
+    <main class="app">
 
-      <textarea id="inputPairs" spellcheck="false" placeholder="engine; silnik
+        <!-- SETUP VIEW -->
+        <section id="setupView" class="view setup card-like active" aria-labelledby="setupTitle">
+            <h1 id="setupTitle">Fiszki — wprowadź pary i startuj</h1>
+            <p class="lead">
+                Wpisuj po jednej parze w wierszu, <strong>słówko</strong> i <strong>znaczenie</strong> rozdziel
+                <strong>średnikiem</strong> (<code>;</code>). Np.: <em>engine; silnik</em>
+            </p>
+
+            <textarea id="inputPairs" spellcheck="false" placeholder="engine; silnik
 wheel; koło
 wrench; klucz
 spark plug; świeca zapłonowa"></textarea>
 
-      <div id="setupError" class="error hidden" role="alert"></div>
+            <div id="setupError" class="error hidden" role="alert"></div>
 
-      <!-- Podsumowanie pamięci SRS -->
-      <div class="row" style="margin-top:8px">
-        <div class="fine">
-          Pamięć SRS: <strong><span id="srsCount">0</span></strong> kart •
-          Do powtórki dziś: <strong><span id="srsDue">0</span></strong>
-        </div>
-        <div style="display:flex; gap:8px; margin-left:auto; flex-wrap:wrap">
-          <button id="srsDetailsBtn" class="btn secondary" type="button">Szczegóły pamięci</button>
-        </div>
-      </div>
-
-      <div class="row" style="margin-top:12px; gap:8px">
-        <div class="fine">
-          Skróty: <span class="kbd">Space</span> — pokaż •
-          <span class="kbd">J</span> — Umiem • <span class="kbd">F</span> — Nie umiem
-        </div>
-        <div style="display:flex; gap:8px; margin-left:auto; flex-wrap:wrap">
-          <button id="reviewBtn" class="btn secondary" type="button" title="Załaduj zestaw w terminie z localStorage">Tryb powtórki (0)</button>
-          <button id="clearReviewBtn" class="btn secondary" type="button" title="Wyczyść zapisane karty SRS">Wyczyść powtórkę</button>
-          <button id="sampleBtn" class="btn secondary" type="button">Wstaw przykładową listę</button>
-		  <button id="exportBtn" class="btn secondary" type="button" title="Eksportuj pamięć do pliku">Eksport</button>
-		  <button id="importBtn" class="btn secondary" type="button" title="Importuj pamięć z pliku">Import</button>
-		  <input id="importFile" type="file" accept="application/json" class="hidden" />
-          <!-- NOWOŚĆ: sesja jednorazowa -->
-          <button id="oneOffBtn" class="btn secondary" type="button" title="Jednorazowe odpytywanie bez zapisu do pamięci">Sesja jednorazowa</button>
-          <button id="startBtn" class="btn" type="button">Start (z pamięcią)</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- GAME VIEW -->
-    <section id="gameView" class="view game card-like" aria-live="polite">
-      <div class="topbar">
-        <div class="progress" id="progress">Pozostało: 0</div>
-        <button id="backBtn" class="btn secondary" type="button" aria-label="Wróć do wprowadzania listy">↩︎ Wróć</button>
-      </div>
-
-      <div id="gameArea" class="stage">
-        <div class="flashcard" id="flashcard" tabindex="0" aria-label="Kliknij, aby odsłonić znaczenie">
-          <div class="card3d" id="card3d">
-            <div class="face front">
-              <div class="term" id="frontText">—</div>
-              <div class="hint">Kliknij kartę lub naciśnij <span class="kbd">Space</span>, aby odsłonić</div>
-            </div>
-            <div class="face back">
-              <div>
-                <div class="meaning" id="backText">—</div>
-                <div class="actions hidden" id="actions">
-                  <button id="knowBtn" class="btn success" type="button">Umiem (J)</button>
-                  <button id="dontKnowBtn" class="btn danger" type="button">Nie umiem (F)</button>
+            <!-- Podsumowanie pamięci SRS -->
+            <div class="row" style="margin-top:8px">
+                <div class="fine">
+                    Pamięć SRS: <strong><span id="srsCount">0</span></strong> kart •
+                    Do powtórki dziś: <strong><span id="srsDue">0</span></strong>
                 </div>
-              </div>
+                <div style="display:flex; gap:8px; margin-left:auto">
+                    <button id="srsDetailsBtn" class="btn secondary" type="button">Szczegóły pamięci</button>
+                </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <div id="finishArea" class="result hidden">
-        <h2>Gotowe! 🎉</h2>
-        <p class="lead">Wszystkie fiszki zaliczone.</p>
-        <div style="display:flex; gap:8px; justify-content:center; margin-top:8px">
-          <button id="againBtn" class="btn" type="button">Zagraj ponownie</button>
-          <button id="restartBtn" class="btn secondary" type="button">Nowa talia</button>
-        </div>
-      </div>
-    </section>
+            <div class="row" style="margin-top:12px; gap:8px">
+                <div class="fine">
+                    Skróty w grze: <span class="kbd">Space</span> — pokaż •
+                    <span class="kbd">J</span> — Umiem • <span class="kbd">F</span> — Nie umiem
+                </div>
+                <div style="display:flex; gap:8px; margin-left:auto; flex-wrap:wrap">
+                    <button id="reviewBtn" class="btn secondary" type="button" title="Załaduj zestaw w terminie z localStorage">Tryb powtórki (0)</button>
+                    <button id="clearReviewBtn" class="btn secondary" type="button" title="Wyczyść zapisane karty SRS">Wyczyść powtórkę</button>
 
-    <!-- SRS DETAILS VIEW -->
-    <section id="srsView" class="view setup card-like" aria-labelledby="srsTitle">
-      <h1 id="srsTitle">Pamięć (Leitner) — szczegóły</h1>
-      <p class="lead">Razem: <strong><span id="srsCount2">0</span></strong> •
-        Do powtórki dziś: <strong><span id="srsDue2">0</span></strong></p>
+                    <button id="exportBtn" class="btn secondary" type="button" title="Eksportuj pamięć do pliku">Eksport</button>
+                    <button id="importBtn" class="btn secondary" type="button" title="Importuj pamięć z pliku">Import</button>
+                    <input id="importFile" type="file" accept="application/json" class="hidden" />
 
-      <div class="table-wrap" style="margin-top:8px">
-        <table class="table" id="srsTable">
-          <thead>
-            <tr>
-              <th>Słówko</th>
-              <th>Znaczenie</th>
-              <th>Pudełko</th>
-              <th>Następna powtórka</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+                    <button id="sampleBtn" class="btn secondary" type="button">Wstaw przykładową listę</button>
+                    <button id="oneOffBtn" class="btn" type="button" title="Jednorazowa sesja — bez zapisu do SRS">Start (jednorazowo)</button>
+                    <button id="startBtn" class="btn" type="button" title="Start z pamięcią SRS">Start</button>
+                </div>
+            </div>
+        </section>
 
-      <div style="display:flex; gap:8px; margin-top:16px">
-        <button id="srsBackBtn" class="btn secondary" type="button">↩︎ Wróć</button>
-      </div>
-    </section>
+        <!-- GAME VIEW -->
+        <section id="gameView" class="view game card-like" aria-live="polite">
+            <div class="topbar">
+                <div class="progress" id="progress">Pozostało: 0</div>
+                <button id="backBtn" class="btn secondary" type="button" aria-label="Wróć do wprowadzania listy">↩︎ Wróć</button>
+            </div>
 
-  </main>
-  <noscript>Ta aplikacja wymaga włączonego JavaScriptu.</noscript>
+            <div id="gameArea" class="stage">
+                <div class="flashcard" id="flashcard" tabindex="0" aria-label="Kliknij, aby odsłonić znaczenie">
+                    <div class="card3d" id="card3d">
+                        <div class="face front">
+                            <div class="term" id="frontText">—</div>
+                            <div class="hint">Kliknij kartę lub naciśnij <span class="kbd">Space</span>, aby odsłonić</div>
+                        </div>
+                        <div class="face back">
+                            <div>
+                                <div class="meaning" id="backText">—</div>
+                                <div class="actions hidden" id="actions">
+                                    <button id="knowBtn" class="btn success" type="button">Umiem (J)</button>
+                                    <button id="dontKnowBtn" class="btn danger" type="button">Nie umiem (F)</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ekran zakończenia + statystyki -->
+            <div id="finishArea" class="result hidden" style="max-width:720px; margin: 12px auto 0;">
+                <h2>Gotowe! 🎉</h2>
+                <p class="lead" id="finishLead">Wszystkie fiszki zaliczone.</p>
+
+                <div class="card-like" style="margin-top:8px">
+                    <h3 style="margin-top:0">Statystyki sesji</h3>
+                    <ul style="margin:8px 0 0 18px; line-height:1.6">
+                        <li>Za 1. razem: <strong><span id="statFirstTry">0</span></strong> / <span id="statTotal">0</span> (<span id="statPercent">0%</span>)</li>
+                        <li>Czas trwania: <strong><span id="statDuration">0:00</span></strong></li>
+                        <li>Wszystkich prób (kliknięć „Umiem/Nie umiem”): <strong><span id="statTotalAttempts">0</span></strong></li>
+                        <li>Średnia prób na kartę: <strong><span id="statAvgAttempts">0.00</span></strong></li>
+                    </ul>
+                </div>
+
+                <div style="display:flex; gap:8px; justify-content:center; margin-top:8px">
+                    <button id="againBtn" class="btn" type="button">Zagraj ponownie</button>
+                    <button id="restartBtn" class="btn secondary" type="button">Nowa talia</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SRS DETAILS VIEW -->
+        <section id="srsView" class="view setup card-like" aria-labelledby="srsTitle">
+            <h1 id="srsTitle">Pamięć (Leitner) — szczegóły</h1>
+            <p class="lead">
+                Razem: <strong><span id="srsCount2">0</span></strong> •
+                Do powtórki dziś: <strong><span id="srsDue2">0</span></strong>
+            </p>
+
+            <div class="table-wrap" style="margin-top:8px">
+                <table class="table" id="srsTable">
+                    <thead>
+                        <tr>
+                            <th>Słówko</th>
+                            <th>Znaczenie</th>
+                            <th>Pudełko</th>
+                            <th>Następna powtórka</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top:16px">
+                <button id="srsBackBtn" class="btn secondary" type="button">↩︎ Wróć</button>
+            </div>
+        </section>
+
+    </main>
+    <noscript>Ta aplikacja wymaga włączonego JavaScriptu.</noscript>
 </body>
 </html>
