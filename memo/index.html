@@ -10,11 +10,17 @@
 <body>
   <div class="app">
 
-    <!-- Back to menu -->
+    <!-- Top bar: back + restart -->
     <div class="topbar">
       <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
-      <br>
-      <button onclick="restartGame()">Restart Game</button>
+      <button
+        type="button"
+        class="btn danger"
+        aria-label="Restartuj grę"
+        onclick="if (confirm('Na pewno zrestartować grę? Bieżący postęp zostanie utracony.')) restartGame();"
+      >
+        Restart Game
+      </button>
     </div>
 
     <h1>Memory Card Game</h1>
@@ -32,9 +38,13 @@
     <!-- Word Input Form -->
     <form id="word-form" style="display: none;">
       <h2>Enter Word Pairs</h2>
-      <textarea id="word-input"
+      <textarea
+        id="word-input"
         placeholder="Enter word pairs (use semicolons): English;Polish↵English;Polish"
-        rows="10" cols="30" required></textarea>
+        rows="10"
+        cols="30"
+        required
+      ></textarea>
       <button type="submit">Start Game</button>
     </form>
 
