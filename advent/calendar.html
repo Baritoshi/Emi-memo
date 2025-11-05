@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Maturalny Kalendarz – Emi-memo</title>
+  <link rel="stylesheet" href="../styles_autumn.css" />
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
+      <div class="progress" id="progressInfo">Postęp: 0/24</div>
+    </div>
+
+    <div class="card-like">
+      <h1>Maturalny kalendarz adwentowy</h1>
+
+      <div class="row" style="margin-bottom:10px">
+        <label>Poziom:
+          <select id="levelSelect">
+            <option value="base">podstawa</option>
+            <option value="adv">rozszerzenie</option>
+          </select>
+        </label>
+
+        <label>Data startu (dzień 1):
+          <input type="date" id="startDate" />
+        </label>
+
+        <button id="openTodayBtn">Otwórz dzisiejsze</button>
+        <button id="resetBtn" class="secondary">Wyczyść ✔</button>
+      </div>
+
+      <div id="calendar" class="game-links" style="grid-template-columns:repeat(6,1fr)"></div>
+    </div>
+  </div>
+
+  <script src="./advent.data.js" defer></script>
+  <script src="./calendar.js" defer></script>
+</body>
+</html>

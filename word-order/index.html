@@ -1,0 +1,164 @@
+﻿<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rozsypanka wyrazowa</title>
+    <link rel="stylesheet" href="../styles_autumn.css" />
+    <script src="app.js" defer></script>
+
+    <!-- Lokalne style tylko dla tej gry – wyraźne pola + przyciski-klocki -->
+    <style>
+        .zones-grid {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: 1fr;
+            width: 100%;
+        }
+
+        @media (min-width: 860px) {
+            .zones-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        fieldset.zone {
+            border: 2px solid var(--gold);
+            border-radius: 14px;
+            padding: 12px 12px 16px;
+            background: rgba(0,0,0,.06);
+        }
+
+            fieldset.zone legend {
+                padding: 0 8px;
+                font-weight: 800;
+                color: var(--gold);
+            }
+
+        .chips-grid {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            min-height: 88px;
+        }
+
+            .chips-grid#bank {
+                border: 2px dashed var(--gold);
+                padding: 10px;
+                border-radius: 12px;
+                background: rgba(0,0,0,.05);
+            }
+
+            .chips-grid#answer {
+                border: 2px dashed rgba(255,255,255,.35);
+                padding: 10px;
+                border-radius: 12px;
+                background: rgba(255,255,255,.06);
+            }
+
+        /* Podświetlenie poprawności */
+        #answer.ok {
+            outline: 3px solid var(--ok);
+            outline-offset: 3px;
+        }
+
+        #answer.bad {
+            outline: 3px solid var(--bad);
+            outline-offset: 3px;
+        }
+
+        /* Klocki jako przyciski */
+        .chip-btn {
+            appearance: none;
+            border: none;
+            cursor: pointer;
+            user-select: none;
+            background: var(--card);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,.25);
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-weight: 700;
+            letter-spacing: .2px;
+            box-shadow: var(--shadow);
+            transition: filter .15s ease, transform .05s ease;
+        }
+
+            .chip-btn:hover {
+                filter: brightness(1.08);
+            }
+
+            .chip-btn:active {
+                transform: translateY(1px);
+            }
+    </style>
+</head>
+<body>
+    <div class="app">
+
+        <!-- Powrót -->
+        <div class="topbar">
+            <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
+        </div>
+
+        <h1>Rozsypanka wyrazowa</h1>
+
+        <!-- SETUP -->
+        <section id="setupView" class="view active card-like">
+            <p class="lead">
+                Wpisz <strong>po jednym zdaniu w wierszu</strong>. Opcjonalnie dodaj podpowiedź po średniku:
+                <code>We will meet tomorrow.; spotkanie jutro</code>
+            </p>
+
+            <textarea id="sentencesInput" rows="8" placeholder="It's raining cats and dogs.
+She has been learning English for three years.
+We will meet tomorrow.; podpowiedź: spotkanie jutro"></textarea>
+
+            <div class="row">
+                <button id="sampleBtn" class="btn secondary" type="button">Wstaw przykładowe</button>
+                <button id="startBtn" class="btn success" type="button">Start</button>
+            </div>
+            <p class="fine">Limit sesji: do 15 zdań. Klikaj klocki, aby je przenosić między polami.</p>
+        </section>
+
+        <!-- GRA -->
+        <section id="gameView" class="view card-like">
+            <div class="topbar">
+                <div class="progress" id="progress">Pozostało: 0</div>
+                <div class="fine" id="hintBox"></div>
+            </div>
+
+            <div class="zones-grid">
+                <fieldset class="zone">
+                    <legend>Pula słów</legend>
+                    <div id="bank" class="chips-grid" aria-label="Pula słów"></div>
+                </fieldset>
+
+                <fieldset class="zone">
+                    <legend>Twoja odpowiedź</legend>
+                    <div id="answer" class="chips-grid" aria-label="Ułóż zdanie tutaj"></div>
+                </fieldset>
+            </div>
+
+            <div class="row" style="margin-top:12px">
+                <button id="checkBtn" class="btn success" type="button">Sprawdź</button>
+                <button id="showBtn" class="btn secondary" type="button">Pokaż rozwiązanie</button>
+                <button id="nextBtn" class="btn" type="button">Następne zdanie</button>
+                <button id="restartBtn" class="btn danger" type="button">Zakończ sesję</button>
+            </div>
+        </section>
+
+        <!-- KONIEC -->
+        <section id="finishView" class="view card-like">
+            <h2>Gotowe! 🎉</h2>
+            <p class="lead" id="summaryText"></p>
+            <div class="row">
+                <button id="againBtn" class="btn">Zagraj ponownie</button>
+                <a href="../index.html" class="btn secondary">Powrót do menu</a>
+            </div>
+        </section>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,66 @@
+﻿<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Menedżer Zestawów</title>
+    <link rel="stylesheet" href="../styles_autumn.css" />
+    <script src="./sets-helper.js" defer></script>
+    <script src="./app.js" defer></script>
+</head>
+<body>
+    <div class="app card-like">
+        <div class="topbar">
+            <h1 style="margin:0">Menedżer Zestawów</h1>
+            <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
+        </div>
+
+        <p class="lead">
+            Zestawy wspólne dla gier: <strong>Memory</strong>, <strong>Fiszki</strong>, <strong>Fiszki-Quiz</strong>.
+            Format pozycji: <code>angielskie; polskie</code>. (Każda pozycja to jedna para).
+        </p>
+
+        <!-- Dodawanie / edycja zestawu -->
+        <form id="setForm">
+            <label for="setName"><strong>Nazwa zestawu</strong></label>
+            <input id="setName" type="text" placeholder="Np. Auta — podstawy" required />
+
+            <label for="setItems"><strong>Pozycje (po jednej w wierszu, średnik jako separator)</strong></label>
+            <textarea id="setItems" rows="10" placeholder="engine; silnik
+wheel; koło
+spark plug; świeca zapłonowa"></textarea>
+
+            <div class="row">
+                <button type="submit" class="btn">💾 Zapisz / Nadpisz zestaw</button>
+                <button type="button" id="clearFormBtn" class="btn secondary">Wyczyść formularz</button>
+            </div>
+        </form>
+
+        <!-- Operacje na wybranym zestawie -->
+        <div class="row" style="margin:16px 0">
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+                <label for="setsList"><strong>Twoje zestawy</strong></label>
+                <select id="setsList"></select>
+                <button id="loadBtn" class="btn">Załaduj do formularza</button>
+                <button id="renameBtn" class="btn secondary">Zmień nazwę</button>
+                <button id="deleteBtn" class="btn danger">Usuń</button>
+                <button id="exportBtn" class="btn secondary">Eksportuj (JSON)</button>
+                <button id="exportAllBtn" class="btn secondary">Eksportuj WSZYSTKIE</button>
+                <button id="importBtn" class="btn secondary">Importuj (JSON)</button>
+                <input id="importFile" type="file" accept="application/json" hidden />
+            </div>
+        </div>
+
+        <!-- Tabela podglądu -->
+        <div class="table-wrap">
+            <table class="table" id="previewTable">
+                <thead>
+                    <tr><th>#</th><th>Słówko</th><th>Znaczenie</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Zadanie – Maturalny kalendarz</title>
+  <link rel="stylesheet" href="../styles_autumn.css" />
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <a class="back-menu" href="./calendar.html"><span>←</span> Wróć do kalendarza</a>
+      <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
+      <div class="progress" id="progressInfo">Postęp: 0/24</div>
+    </div>
+
+    <div class="card-like">
+      <h1 id="taskTitle">Dzień –</h1>
+      <p class="notice" id="taskMeta">Poziom: …</p>
+
+      <div id="taskTeaser" class="notice"></div>
+
+      <div id="taskCard" class="card-like" style="margin-top:12px">
+        <div id="taskContent"></div>
+      </div>
+
+      <div class="actions" style="margin-top:14px; justify-content:flex-start">
+        <button id="markBtn" class="success">Oznacz jako wykonane ✔︎</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./advent.data.js" defer></script>
+  <script src="./task.js" defer></script>
+</body>
+</html>
