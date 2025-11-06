@@ -1,64 +1,149 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Memory Card Game</title>
-  <link rel="stylesheet" href="../styles_autumn.css" />
-  <script src="script.js" defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Memory Card Game</title>
+    <link rel="stylesheet" href="../styles_autumn.css" />
+    <!-- helper MUSI być przed skryptem gry -->
+    <script src="../sets/sets-helper.js" defer></script>
+    <script src="script.js" defer></script>
 </head>
 <body>
-  <div class="app">
+    <div class="app">
 
-    <!-- Top bar: tylko powrót do menu -->
-    <div class="topbar">
-      <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
+        <div class="topbar">
+            <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
+        </div>
+
+        <h1>Memory Card Game</h1>
+
+        <!-- Player Config -->
+        <form id="player-config">
+            <h2>Configure Players</h2>
+            <label for="num-players">Number of Players:</label>
+            <input type="number" id="num-players" min="1" max="10" value="2" required />
+            <div id="player-names"></div>
+            <button type="button" id="generate-players">Generate Player Fields</button>
+            <button type="submit">Start Game</button>
+        </form>
+
+        <!-- Word Input -->
+        <form id="word-form" style="display: none;">
+            <h2>Enter Word Pairs</h2>
+
+            <!-- Wspólny Menedżer zestawów -->
+            <div class="row" style="margin:8px 0">
+                <select id="setPickerMemo" aria-label="Wybierz zapisany zestaw"></select>
+                <button type="button" id="loadSetMemo" class="btn secondary">Załaduj zestaw</button>
+                <a href="../sets/index.html" class="btn secondary">Menedżer zestawów</a>
+            </div>
+
+            <textarea id="word-input"
+                      placeholder="Enter word pairs (use semicolons):
+English;Polish
+English;Polish"
+                      rows="10" cols="30" required></textarea>
+
+            <button type="submit">Start Game</button>
+        </form>
+
+        <!-- Game -->
+        <div id="game-container" style="display: none;">
+            <div id="score-board"></div>
+            <div id="turn-indicator" style="font-weight: bold; margin-bottom: 20px;">Player's Turn: </div>
+            <div id="game-board"></div>
+
+            <div style="height:16px;"></div>
+            <div style="display:flex; justify-content:center;">
+                <button type="button"
+                        class="btn danger"
+                        onclick="if (confirm('Na pewno zrestartować grę? Bieżący postęp zostanie utracony.')) restartGame();">
+                    Restart Game
+                </button>
+            </div>
+        </div>
     </div>
 
-    <h1>Memory Card Game</h1>
+    <!-- Bezpieczny loader pickera -->
+    <script>
+        (function () {
+            function whenPairSetsReady(cb) {
+                if (window.PairSets && typeof window.PairSets.listSets === 'function') return cb();
+                let tries = 0;
+                const iv = setInterval(() => {
+                    if (window.PairSets && typeof window.PairSets.listSets === 'function') {
+                        clearInterval(iv);
+                        cb();
+                    } else if (++tries > 200) { // ~10s
+                        clearInterval(iv);
+                        console.warn('[Memo] PairSets not ready after waiting.');
+                        cb(); // pokaż fallback — brak zestawów
+                    }
+                }, 50);
+            }
 
-    <!-- Player Configuration Form -->
-    <form id="player-config">
-      <h2>Configure Players</h2>
-      <label for="num-players">Number of Players:</label>
-      <input type="number" id="num-players" min="1" max="10" value="2" required />
-      <div id="player-names"></div>
-      <button type="button" id="generate-players">Generate Player Fields</button>
-      <button type="submit">Start Game</button>
-    </form>
+            function refreshPicker() {
+                const picker = document.getElementById('setPickerMemo');
+                if (!picker) return;
 
-    <!-- Word Input Form -->
-    <form id="word-form" style="display: none;">
-      <h2>Enter Word Pairs</h2>
-      <textarea
-        id="word-input"
-        placeholder="Enter word pairs (use semicolons): English;Polish↵English;Polish"
-        rows="10"
-        cols="30"
-        required
-      ></textarea>
-      <button type="submit">Start Game</button>
-    </form>
+                picker.innerHTML = '';
 
-    <!-- Game Container -->
-    <div id="game-container" style="display: none;">
-      <div id="score-board"></div>
-      <div id="turn-indicator" style="font-weight: bold; margin-bottom: 20px;">Player's Turn: </div>
-      <div id="game-board"></div>
+                let sets = [];
+                try {
+                    sets = (window.PairSets && typeof PairSets.listSets === 'function') ? PairSets.listSets() : [];
+                    console.log('[Memo] listSets ->', sets);
+                } catch (e) {
+                    console.warn('[Memo] listSets error:', e);
+                    sets = [];
+                }
 
-      <!-- odstęp + bezpieczny restart tylko w trakcie gry -->
-      <div style="height: 16px;"></div>
-      <div style="height: 16px;"></div>
-      <div style="display:flex; justify-content:center;">
-        <button
-          type="button"
-          class="btn danger"
-          onclick="if (confirm('Na pewno zrestartować grę?')) restartGame();"
-        >
-          Restart Game
-        </button>
-      </div>
-    </div>
-  </div>
+                if (!sets.length) {
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = '— brak zestawów —';
+                    opt.disabled = true;
+                    opt.selected = true;
+                    picker.appendChild(opt);
+                    return;
+                }
+
+                sets.forEach(name => {
+                    const opt = document.createElement('option');
+                    const count = (window.PairSets && typeof PairSets.getSet === 'function')
+                        ? PairSets.getSet(name).length
+                        : 0;
+                    opt.value = name;
+                    opt.textContent = `${name} (${count})`;
+                    picker.appendChild(opt);
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const loadBtn = document.getElementById('loadSetMemo');
+                const textarea = document.getElementById('word-input');
+
+                whenPairSetsReady(refreshPicker);
+
+                if (loadBtn && textarea) {
+                    loadBtn.addEventListener('click', () => {
+                        if (!window.PairSets) return alert('Sets helper not ready.');
+                        const picker = document.getElementById('setPickerMemo');
+                        const name = picker?.value;
+                        if (!name) return;
+                        const items = PairSets.getSet(name);
+                        textarea.value = PairSets.pairsToTextarea(items);
+                        textarea.focus();
+                    });
+                }
+
+                // po powrocie z menedżera (bez reloadu)
+                window.addEventListener('focus', () => {
+                    if (window.PairSets) refreshPicker();
+                });
+            });
+        })();
+    </script>
+
 </body>
 </html>

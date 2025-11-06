@@ -1,114 +1,117 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Fiszki — Quiz (wpisywanie odpowiedzi)</title>
-    <link rel="stylesheet" href="../styles_autumn.css" />
-    <script src="app.js" defer></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fiszki — Quiz (wpisywanie odpowiedzi)</title>
+  <link rel="stylesheet" href="../styles_autumn.css" />
+  <script src="app.js" defer></script>
 </head>
 <body>
-    <!-- Powrót do menu (ujednolicony z innymi grami) -->
-    <div class="topbar">
-        <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
-    </div>
+  <!-- Powrót do menu -->
+  <div class="topbar">
+    <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
+  </div>
 
-    <main class="app">
+  <main class="app">
 
-        <!-- SETUP VIEW -->
-        <section id="setupView" class="view setup card-like active" aria-labelledby="setupTitle">
-            <h1 id="setupTitle">Fiszki-Quiz — wprowadź pary i startuj</h1>
+    <!-- SETUP VIEW -->
+    <section id="setupView" class="view setup card-like active" aria-labelledby="setupTitle">
+      <h1 id="setupTitle">Fiszki-Quiz — wprowadź pary i startuj</h1>
 
-            <p class="lead">
-                Wpisuj po jednej parze w wierszu, <strong>słówko</strong> i <strong>znaczenie</strong> rozdziel
-                <strong>średnikiem</strong> (<code>;</code>). Np.: <em>engine; silnik</em>. Dopuszczalne wiele odpowiedzi po <code>|</code>.
-            </p>
+      <p class="lead">
+        Wpisuj po jednej parze w wierszu, <strong>słówko</strong> i <strong>znaczenie</strong> rozdziel
+        <strong>średnikiem</strong> (<code>;</code>). Np.: <em>engine; silnik</em>.
+        Dopuszczalne wiele odpowiedzi po <code>|</code>.
+      </p>
 
-            <textarea id="inputPairs" spellcheck="false" placeholder="engine; silnik|motor
+      <!-- ważne: formularz, żeby Enter uruchamiał start -->
+      <form id="setupForm" autocomplete="off">
+        <textarea id="inputPairs" spellcheck="false" placeholder="engine; silnik|motor
 wheel; koło
 wrench; klucz
 spark plug; świeca zapłonowa"></textarea>
 
-            <div id="setupError" class="error hidden" role="alert"></div>
+        <div id="setupError" class="error hidden" role="alert"></div>
 
-            <!-- USTAWIENIA SPRAWDZANIA ODPOWIEDZI -->
-            <fieldset class="card-like" style="margin-top:12px">
-                <legend>Sprawdzanie odpowiedzi</legend>
-                <div class="row" style="gap:12px; align-items:center; flex-wrap:wrap">
-                    <label class="checkbox">
-                        <input type="checkbox" id="lenientToggle" checked>
-                        Łagodne porównanie (ignoruj wielkość liter, diakrytyki i interpunkcję)
-                    </label>
+        <!-- Ustawienia porównania -->
+        <fieldset class="card-like" style="margin-top:12px">
+          <legend>Sprawdzanie odpowiedzi</legend>
+          <div class="row" style="gap:12px; align-items:center; flex-wrap:wrap">
+            <label class="checkbox">
+              <input type="checkbox" id="lenientToggle" checked />
+              Łagodne porównanie (ignoruj wielkość liter, diakrytyki i interpunkcję)
+            </label>
 
-                    <label for="toleranceRange" class="fine" style="display:flex; align-items:center; gap:8px">
-                        Tolerancja literówek:
-                        <input id="toleranceRange" type="range" min="0" max="3" step="1" value="2" />
-                        <span id="toleranceLabel" class="kbd">2</span>
-                    </label>
-                    <span class="fine">0 = dokładnie, 1–3 = dopuszczalna liczba różnic (po kanonizacji)</span>
-                </div>
-            </fieldset>
+            <label for="toleranceRange" class="fine" style="display:flex; align-items:center; gap:8px">
+              Tolerancja literówek:
+              <input id="toleranceRange" type="range" min="0" max="3" step="1" value="2" />
+              <span id="toleranceLabel" class="kbd">2</span>
+            </label>
+            <span class="fine">0 = dokładnie, 1–3 = dopuszczalna liczba różnic (po kanonizacji)</span>
+          </div>
+        </fieldset>
 
-            <div class="row" style="margin-top:12px; gap:8px; flex-wrap:wrap">
-                <button id="reviewBtn" class="btn secondary" type="button" title="Załaduj zestaw w terminie z localStorage">Tryb powtórki (0)</button>
-                <button id="clearReviewBtn" class="btn secondary" type="button" title="Wyczyść zapisane karty SRS">Wyczyść powtórkę</button>
+        <div class="row" style="margin-top:12px; gap:8px; flex-wrap:wrap">
+          <button id="reviewBtn" class="btn secondary" type="button" title="Załaduj karty „na dziś” z SRS">Powtórka (0)</button>
+          <button id="clearReviewBtn" class="btn secondary" type="button" title="Wyczyść zapisaną bazę SRS">Wyczyść powtórkę</button>
 
-                <button id="exportBtn" class="btn secondary" type="button" title="Eksportuj pamięć do pliku">Eksport</button>
-                <button id="importBtn" class="btn secondary" type="button" title="Importuj pamięć z pliku">Import</button>
-                <input id="importFile" type="file" accept="application/json" class="hidden" />
+          <button id="exportBtn" class="btn secondary" type="button" title="Eksportuj pamięć SRS do pliku">Eksport</button>
+          <button id="importBtn" class="btn secondary" type="button" title="Importuj pamięć z pliku (scalanie bez duplikatów)">Import</button>
+          <input id="importFile" type="file" accept="application/json" class="hidden" />
 
-                <button id="sampleBtn" class="btn secondary" type="button">Wstaw przykładową listę</button>
-                <button id="oneOffBtn" class="btn" type="button" title="Jednorazowa sesja — bez zapisu do SRS">Start (jednorazowo)</button>
-                <button id="startBtn" class="btn" type="button" title="Start z pamięcią SRS">Start</button>
-            </div>
-        </section>
+          <button id="sampleBtn" class="btn secondary" type="button">Wstaw przykładową listę</button>
+          <button id="oneOffBtn" class="btn" type="button" title="Jednorazowa sesja — bez zapisu do SRS">Start (jednorazowo)</button>
+          <button id="startBtn" class="btn success" type="button" title="Start z pamięcią SRS">Start</button>
+        </div>
+      </form>
+    </section>
 
-        <!-- GAME VIEW -->
-        <section id="gameView" class="view game card-like" aria-live="polite">
-            <div class="topbar">
-                <div class="progress" id="progress">Pozostało: 0</div>
-                <button id="backBtn" class="btn secondary" type="button" aria-label="Wróć do wprowadzania listy">↩︎ Wróć</button>
-            </div>
+    <!-- GAME VIEW -->
+    <section id="gameView" class="view game card-like" aria-live="polite">
+      <div class="topbar">
+        <div class="progress" id="progress">Pozostało: 0</div>
+        <button id="backBtn" class="btn secondary" type="button" aria-label="Wróć do wprowadzania listy">↩︎ Wróć</button>
+      </div>
 
-            <div id="gameArea" class="stage">
-                <div class="card-like" style="max-width:720px; margin-inline:auto">
-                    <h2 style="margin-top:0">Słówko</h2>
-                    <div id="questionTerm" class="term">—</div>
+      <div id="gameArea" class="stage">
+        <div class="card-like" style="max-width:720px; margin-inline:auto">
+          <h2 style="margin-top:0">Słówko</h2>
+          <div id="questionTerm" class="term">—</div>
 
-                    <form id="answerForm" class="row" style="gap:8px; margin-top:12px">
-                        <input id="answerInput" class="input" type="text" autocomplete="off" placeholder="Twoja odpowiedź…" />
-                        <button id="checkBtn" class="btn" type="submit">Sprawdź</button>
-                        <button id="nextBtn" class="btn secondary hidden" type="button">Następne</button>
-                    </form>
+          <form id="answerForm" class="row" style="gap:8px; margin-top:12px">
+            <input id="answerInput" class="input" type="text" autocomplete="off" placeholder="Twoja odpowiedź…" />
+            <button id="checkBtn" class="btn" type="submit">Sprawdź</button>
+            <button id="nextBtn" class="btn secondary hidden" type="button">Następne</button>
+          </form>
 
-                    <div id="feedback" class="lead hidden" style="margin-top:8px"></div>
-                </div>
-            </div>
+          <div id="feedback" class="lead hidden" style="margin-top:8px"></div>
+        </div>
+      </div>
 
-            <div id="finishArea" class="result hidden" style="max-width:720px; margin: 12px auto 0;">
-                <h2>Gotowe! 🎉</h2>
-                <p class="lead" id="finishLead">Wszystkie fiszki zaliczone.</p>
+      <div id="finishArea" class="result hidden" style="max-width:720px; margin: 12px auto 0;">
+        <h2>Gotowe! 🎉</h2>
+        <p class="lead" id="finishLead">Wszystkie fiszki zaliczone.</p>
 
-                <!-- Statystyki sesji -->
-                <div class="card-like" style="margin-top:8px">
-                    <h3 style="margin-top:0">Statystyki sesji</h3>
-                    <ul style="margin:8px 0 0 18px; line-height:1.6">
-                        <li>Za 1. razem: <strong><span id="statFirstTry">0</span></strong> / <span id="statTotal">0</span> (<span id="statPercent">0%</span>)</li>
-                        <li>Czas trwania: <strong><span id="statDuration">0:00</span></strong></li>
-                        <li>Wszystkich prób (łącznie z powtórkami): <strong><span id="statTotalAttempts">0</span></strong></li>
-                        <li>Średnia prób na kartę: <strong><span id="statAvgAttempts">0.00</span></strong></li>
-                    </ul>
-                </div>
+        <div class="card-like" style="margin-top:8px">
+          <h3 style="margin-top:0">Statystyki sesji</h3>
+          <ul style="margin:8px 0 0 18px; line-height:1.6">
+            <li>Za 1. razem: <strong><span id="statFirstTry">0</span></strong> / <span id="statTotal">0</span> (<span id="statPercent">0%</span>)</li>
+            <li>Czas trwania: <strong><span id="statDuration">0:00</span></strong></li>
+            <li>Wszystkich prób (łącznie z powtórkami): <strong><span id="statTotalAttempts">0</span></strong></li>
+            <li>Średnia prób na kartę: <strong><span id="statAvgAttempts">0.00</span></strong></li>
+          </ul>
+        </div>
 
-                <div style="display:flex; gap:8px; justify-content:center; margin-top:8px">
-                    <button id="againBtn" class="btn" type="button">Zagraj ponownie</button>
-                    <button id="restartBtn" class="btn secondary" type="button">Nowa talia</button>
-                    <a href="../index.html" class="btn secondary back-link">↩︎ Menu gier</a>
-                </div>
-            </div>
-        </section>
+        <div style="display:flex; gap:8px; justify-content:center; margin-top:8px">
+          <button id="againBtn" class="btn" type="button">Zagraj ponownie</button>
+          <button id="restartBtn" class="btn secondary" type="button">Nowa talia</button>
+          <a href="../index.html" class="btn secondary back-link">↩︎ Menu gier</a>
+        </div>
+      </div>
+    </section>
 
-    </main>
-    <noscript>Ta aplikacja wymaga włączonego JavaScriptu.</noscript>
+  </main>
+  <noscript>Ta aplikacja wymaga włączonego JavaScriptu.</noscript>
 </body>
 </html>

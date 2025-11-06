@@ -8,7 +8,7 @@
     <script src="app.js" defer></script>
 </head>
 <body>
-    <!-- Powrót do menu (spójny z innymi grami) -->
+    <!-- Powrót do menu -->
     <div class="topbar">
         <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
     </div>
@@ -23,42 +23,46 @@
                 <strong>średnikiem</strong> (<code>;</code>). Np.: <em>engine; silnik</em>
             </p>
 
-            <textarea id="inputPairs" spellcheck="false" placeholder="engine; silnik
+            <form id="addForm" autocomplete="off">
+                <textarea id="inputPairs" spellcheck="false" placeholder="engine; silnik
 wheel; koło
 wrench; klucz
 spark plug; świeca zapłonowa"></textarea>
 
-            <div id="setupError" class="error hidden" role="alert"></div>
+                <div id="setupError" class="error hidden" role="alert"></div>
 
-            <!-- Podsumowanie pamięci SRS -->
-            <div class="row" style="margin-top:8px">
-                <div class="fine">
-                    Pamięć SRS: <strong><span id="srsCount">0</span></strong> kart •
-                    Do powtórki dziś: <strong><span id="srsDue">0</span></strong>
+                <!-- Podsumowanie pamięci SRS -->
+                <div class="row" style="margin-top:8px">
+                    <div class="fine">
+                        Pamięć SRS: <strong><span id="srsCount">0</span></strong> kart •
+                        Do powtórki dziś: <strong><span id="srsDue">0</span></strong>
+                    </div>
+                    <div style="display:flex; gap:8px; margin-left:auto">
+                        <button id="srsDetailsBtn" class="btn secondary" type="button">Szczegóły pamięci</button>
+                    </div>
                 </div>
-                <div style="display:flex; gap:8px; margin-left:auto">
-                    <button id="srsDetailsBtn" class="btn secondary" type="button">Szczegóły pamięci</button>
-                </div>
-            </div>
 
-            <div class="row" style="margin-top:12px; gap:8px">
-                <div class="fine">
-                    Skróty w grze: <span class="kbd">Space</span> — pokaż •
-                    <span class="kbd">J</span> — Umiem • <span class="kbd">F</span> — Nie umiem
-                </div>
-                <div style="display:flex; gap:8px; margin-left:auto; flex-wrap:wrap">
-                    <button id="reviewBtn" class="btn secondary" type="button" title="Załaduj zestaw w terminie z localStorage">Tryb powtórki (0)</button>
-                    <button id="clearReviewBtn" class="btn secondary" type="button" title="Wyczyść zapisane karty SRS">Wyczyść powtórkę</button>
+                <div class="row" style="margin-top:12px; gap:8px">
+                    <div class="fine">
+                        Skróty w grze: <span class="kbd">Space</span> — pokaż •
+                        <span class="kbd">J</span> — Umiem • <span class="kbd">F</span> — Nie umiem
+                    </div>
+                    <div style="display:flex; gap:8px; margin-left:auto; flex-wrap:wrap">
+                        <button id="reviewBtn" class="btn secondary" type="button" title="Załaduj zestaw w terminie z localStorage">Tryb powtórki (0)</button>
+                        <button id="clearReviewBtn" class="btn secondary" type="button" title="Wyczyść zapisane karty SRS">Wyczyść powtórkę</button>
 
-                    <button id="exportBtn" class="btn secondary" type="button" title="Eksportuj pamięć do pliku">Eksport</button>
-                    <button id="importBtn" class="btn secondary" type="button" title="Importuj pamięć z pliku">Import</button>
-                    <input id="importFile" type="file" accept="application/json" class="hidden" />
+                        <button id="exportBtn" class="btn secondary" type="button" title="Eksportuj pamięć do pliku">Eksport</button>
+                        <button id="importBtn" class="btn secondary" type="button" title="Importuj pamięć z pliku">Import</button>
+                        <input id="importFile" type="file" accept="application/json" class="hidden" />
 
-                    <button id="sampleBtn" class="btn secondary" type="button">Wstaw przykładową listę</button>
-                    <button id="oneOffBtn" class="btn" type="button" title="Jednorazowa sesja — bez zapisu do SRS">Start (jednorazowo)</button>
-                    <button id="startBtn" class="btn" type="button" title="Start z pamięcią SRS">Start</button>
+                        <button id="sampleBtn" class="btn secondary" type="button">Wstaw przykładową listę</button>
+
+                        <!-- WAŻNE: button, nie submit + ID dla JS -->
+                        <button id="oneOffBtn" class="btn" type="button" title="Jednorazowa sesja — bez zapisu do SRS">Start (jednorazowo)</button>
+                        <button id="startBtn" class="btn success" type="button" title="Start z pamięcią SRS">Start</button>
+                    </div>
                 </div>
-            </div>
+            </form>
         </section>
 
         <!-- GAME VIEW -->
