@@ -117,9 +117,9 @@ function render(){
       a.style.position    = "relative";
       a.style.display     = "grid";
       a.style.placeItems  = "center";
-      a.style.minHeight   = "86px";
+      a.style.minHeight   = "clamp(72px, 10vw, 110px)";
       a.style.aspectRatio = "1 / 1";
-      a.style.fontSize    = "22px";
+      a.style.fontSize    = "clamp(18px, 4.5vw, 22px)";
       a.style.fontWeight  = "800";
       a.style.color       = "#fff";
       a.style.opacity     = unlocked ? "1" : "0.55";

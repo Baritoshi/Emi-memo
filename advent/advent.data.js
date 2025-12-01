@@ -102,11 +102,11 @@ window.ADVENT_TASKS = {
       `<p><strong>Tekst (~120 słów):</strong><br>
       Local councils often look for volunteers to help organize community events. Tasks range from designing posters to welcoming guests. Although volunteers don’t get paid, many say the experience is rewarding and improves their communication skills. Some events take place at weekends, while others are held on weekday evenings. Training is always provided, and volunteers can choose the tasks that suit them best. According to last year’s report, over 60% of volunteers decided to continue after their first event. The council also offers certificates to recognize long-term involvement.</p>`,
       [
-        { type:"mcq", prompt:"All events are organized at weekends.", options:["T","F","NG"], answer:1 },
-        { type:"mcq", prompt:"Volunteers can select tasks.",           options:["T","F","NG"], answer:0 },
-        { type:"mcq", prompt:"Training is available.",                 options:["T","F","NG"], answer:0 },
-        { type:"mcq", prompt:"Most volunteers quit after the first event.", options:["T","F","NG"], answer:1 },
-        { type:"mcq", prompt:"Certificates may be given.",             options:["T","F","NG"], answer:0 }
+        { type:"mcq", prompt:"All events are organized at weekends.", options:["Prawda","Fałsz","Brak informacji"], answer:1 },
+        { type:"mcq", prompt:"Volunteers can select tasks.",           options:["Prawda","Fałsz","Brak informacji"], answer:0 },
+        { type:"mcq", prompt:"Training is available.",                 options:["Prawda","Fałsz","Brak informacji"], answer:0 },
+        { type:"mcq", prompt:"Most volunteers quit after the first event.", options:["Prawda","Fałsz","Brak informacji"], answer:1 },
+        { type:"mcq", prompt:"Certificates may be given.",             options:["Prawda","Fałsz","Brak informacji"], answer:0 }
       ]
     ],
 
