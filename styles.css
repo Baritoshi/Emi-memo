@@ -591,7 +591,7 @@ button {
     }
 
 
-    /* === Advent Calendar responsive override — 2025-12-01 === */
+/* === Advent Calendar responsive override — 2025-12-01 === */
 :root{
   --cal-gutter: 12px;   /* odstęp między kafelkami (zapas jeśli brak w bazie) */
   --cal-min: 88px;      /* minimalny rozmiar kafelka */
@@ -662,4 +662,41 @@ html, body{
     clear: both;
   }
 }
+
+
+/* === Advent Calendar — płynna siatka jak w Memory (override) === */
+:root{
+  --cal-gutter: 12px;
+  --cal-min: 88px;         /* minimalny rozmiar kafelka */
+}
+
+#calendar{
+  display: grid;
+  gap: var(--cal-gutter, 12px);
+  /* klucz: dynamiczna liczba kolumn zależna od szerokości */
+  grid-template-columns: repeat(auto-fit, minmax(var(--cal-min, 88px), 1fr)) !important;
+}
+
+/* kafelki kwadratowe; wyłączamy twarde min-height z JS */
+#calendar .game-button{
+  aspect-ratio: 1 / 1;
+  min-height: auto !important;
+}
+
+/* Fallback dla przeglądarek bez aspect-ratio */
+@supports not (aspect-ratio: 1 / 1){
+  #calendar .game-button::before{
+    content: "";
+    float: left;
+    padding-top: 100%;
+  }
+  #calendar .game-button::after{
+    content: "";
+    display: block;
+    clear: both;
+  }
+}
+
+/* Bezpiecznik: brak poziomego scrolla na wąskich ekranach */
+html, body{ overflow-x: hidden; }
 
