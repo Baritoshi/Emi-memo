@@ -75,6 +75,54 @@ document.addEventListener('DOMContentLoaded', () => {
   const getDueNow  = () => { const now = Date.now(); return readAll().filter(e => (e.dueAt ?? 0) <= now); };
   const findIndex  = (arr, c) => arr.findIndex(x => keyOf(x) === keyOf(c));
 
+  // --- Handoff z URL / current set z localStorage ---
+function getQP(k){ return new URLSearchParams(location.search).get(k); }
+
+function hydrateFromQueryOrCurrent() {
+  if (!window.PairSets) return;
+  const textarea = document.getElementById('inputPairs');
+  if (!textarea) return;
+
+  // 1) Priorytet: query ?set=...
+  let setName = getQP('set');
+
+  // 2) Fallback: bieżący wybór z helpera
+  if (!setName) setName = PairSets.getCurrent();
+
+  // 3) Fallback awaryjny: ?data=base64(tekst par)
+  const dataB64 = getQP('data');
+  if (!setName && dataB64 && !textarea.value) {
+    try { textarea.value = atob(decodeURIComponent(dataB64)); } catch {}
+  }
+
+  if (setName) {
+    const items = PairSets.getSet(setName);
+    if (items && items.length) {
+      textarea.value = PairSets.pairsToTextarea(items);
+    }
+  }
+
+  // autostart: ?autostart=srs|oneoff|review
+  const mode = (getQP('autostart') || '').toLowerCase();
+  if (mode === 'srs')       document.getElementById('startBtn')?.click();
+  else if (mode === 'oneoff') document.getElementById('oneOffBtn')?.click();
+  else if (mode === 'review') document.getElementById('reviewBtn')?.click();
+}
+
+// aktualizacje na żywo (inna karta/menedżer zmienił wybór albo listę)
+window.addEventListener('pairsets:current', hydrateFromQueryOrCurrent);
+window.addEventListener('pairsets:changed', () => {
+  // nic nie nadpisujemy użytkownikowi jeśli już coś wpisał
+  if (!document.getElementById('inputPairs')?.value) hydrateFromQueryOrCurrent();
+});
+
+// start
+hydrateFromQueryOrCurrent();
+
+// Kiedy ładujesz set z pickera w samej grze (jeśli masz taki przycisk):
+// PairSets.setCurrent(nazwa);  // to zsynchronizuje wybór z innymi grami
+
+
   function ensureEntry(card){
     const arr = readAll(); const idx = findIndex(arr, card);
     if (idx >= 0) return { arr, idx };

@@ -68,6 +68,42 @@ document.addEventListener('DOMContentLoaded', () => {
   const getDueNow  = () => { const now = Date.now(); return readAll().filter(e => (e.dueAt ?? 0) <= now); };
   const findIndex  = (arr, c) => arr.findIndex(x => keyOf(x) === keyOf(c));
 
+  // --- Handoff z URL / current set z localStorage ---
+function getQP(k){ return new URLSearchParams(location.search).get(k); }
+
+function hydrateFromQueryOrCurrent() {
+  if (!window.PairSets) return;
+  const textarea = document.getElementById('inputPairs');
+  if (!textarea) return;
+
+  let setName = getQP('set');
+  if (!setName) setName = PairSets.getCurrent();
+
+  const dataB64 = getQP('data');
+  if (!setName && dataB64 && !textarea.value) {
+    try { textarea.value = atob(decodeURIComponent(dataB64)); } catch {}
+  }
+
+  if (setName) {
+    const items = PairSets.getSet(setName);
+    if (items && items.length) {
+      textarea.value = PairSets.pairsToTextarea(items);
+    }
+  }
+
+  const mode = (getQP('autostart') || '').toLowerCase();
+  if (mode === 'srs')       document.getElementById('startBtn')?.click();
+  else if (mode === 'oneoff') document.getElementById('oneOffBtn')?.click();
+  else if (mode === 'review') document.getElementById('reviewBtn')?.click();
+}
+
+window.addEventListener('pairsets:current', hydrateFromQueryOrCurrent);
+window.addEventListener('pairsets:changed', () => {
+  if (!document.getElementById('inputPairs')?.value) hydrateFromQueryOrCurrent();
+});
+hydrateFromQueryOrCurrent();
+
+
   function ensureEntry(card){
     const arr = readAll(); const idx = findIndex(arr, card);
     if (idx >= 0) return { arr, idx };
