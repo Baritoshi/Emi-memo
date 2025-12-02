@@ -1,12 +1,13 @@
-/* task.js — Emi-memo Advent (MCQ + CLOZE + SHORT + MATCH; działa lokalnie z file://) */
+/* task.js — Emi-memo Advent (MCQ + CLOZE + SHORT + MATCH; zapis TYLKO poprawnych pól) */
 
 const STORAGE_KEY = "emiMemoAdvent2025";
 
+// ---- Parametry z URL ----
 const params = new URLSearchParams(location.search);
-// Parametry URL
 let day   = Math.max(1, Math.min(24, Number(params.get("day") || 1)));
 let level = (params.get("level")==="adv") ? "adv" : "base";
 
+// ---- Elementy UI ----
 const els = {
   progressInfo: document.getElementById("progressInfo"),
   taskTitle:    document.getElementById("taskTitle"),
@@ -14,17 +15,16 @@ const els = {
   taskContent:  document.getElementById("taskContent"),
   taskTeaser:   document.getElementById("taskTeaser"),
   taskCard:     document.getElementById("taskCard"),
-  markBtn:      document.getElementById("markBtn")
+  markBtn:      document.getElementById("markBtn"),
 };
 
+// ---- Dane ----
 const DATA  = window.ADVENT_TASKS || { base: [], adv: [] };
-const tasks = (level==="adv") ? (DATA.adv||[]) : (DATA.base||[]);
+const tasks = (level==="adv") ? (DATA.adv || []) : (DATA.base || []);
 
 let done = JSON.parse(localStorage.getItem(STORAGE_KEY + ":done") || "[]");
 if (!Array.isArray(done)) done = [];
-for (let i=0;i<24;i++){
-  if (typeof done[i] === "undefined") done[i] = false;
-}
+for (let i=0;i<24;i++) if (typeof done[i] === "undefined") done[i] = false;
 
 const levelTxt = (level==="adv") ? "Poziom: rozszerzenie" : "Poziom: podstawa";
 
@@ -33,50 +33,173 @@ function saveDone(){
   localStorage.setItem(STORAGE_KEY + ":ts", String(Date.now())); // ping (opcjonalny)
 }
 
-/* ===== Helpers (normalizacja i porównania) ===== */
+/* =================== PERSISTENCJA TYLKO POPRAWNYCH ODPOWIEDZI =================== */
+
+function answersKey(level, day){
+  return `${STORAGE_KEY}:ans:${level}:${day}`;
+}
+function readSavedAnswers(){
+  try {
+    const raw = localStorage.getItem(answersKey(level, day));
+    const obj = raw ? JSON.parse(raw) : null;
+    if (obj && typeof obj === "object") {
+      return {
+        mcq:   obj.mcq   || {},
+        cloze: obj.cloze || {},
+        short: obj.short || {},
+        match: obj.match || {},
+      };
+    }
+  } catch {}
+  return { mcq:{}, cloze:{}, short:{}, match:{} };
+}
+function writeSavedAnswers(state){
+  try {
+    localStorage.setItem(answersKey(level, day), JSON.stringify(state));
+  } catch {}
+}
+
+/** Po SPRAWDŹ: zapisuje WYŁĄCZNIE pola oznaczone jako poprawne (✓). */
+function saveCorrectFromDOM(items){
+  const saved = readSavedAnswers();
+
+  // MCQ: zapisuj tylko jeśli zaznaczona odpowiedź jest poprawna (checked-label ma ✓)
+  items.forEach((it, idx) => {
+    if (it.type === "mcq") {
+      const chosen = document.querySelector(`input[name="q${idx}"]:checked`);
+      if (!chosen) { delete saved.mcq[idx]; return; }
+      const lab = chosen.closest("label");
+      const icon = lab?.querySelector(":scope > .status-icon");
+      if (icon && icon.textContent === "✓") {
+        saved.mcq[idx] = Number(chosen.value);
+      } else {
+        delete saved.mcq[idx];
+      }
+    }
+  });
+
+  // CLOZE: każde pole input[data-cloze] z ✓ zapisujemy z jego bieżącą wartością
+  items.forEach((it, idx) => {
+    if (it.type === "cloze") {
+      const inputs = document.querySelectorAll(`input[data-cloze="${idx}"]`);
+      if (!inputs.length) { delete saved.cloze[idx]; return; }
+      const bucket = {};
+      inputs.forEach((inp, bIndex) => {
+        const icon = (inp.parentElement || inp).querySelector(":scope > .status-icon");
+        if (icon && icon.textContent === "✓") {
+          const v = String(inp.value || "").trim();
+          if (v) bucket[bIndex] = v;
+        }
+      });
+      if (Object.keys(bucket).length) saved.cloze[idx] = bucket; else delete saved.cloze[idx];
+    }
+  });
+
+  // SHORT: input[data-short] z ✓
+  items.forEach((it, idx) => {
+    if (it.type === "short") {
+      const inp  = document.querySelector(`input[data-short="${idx}"]`);
+      if (!inp) { delete saved.short[idx]; return; }
+      const icon = (inp.parentElement || inp).querySelector(":scope > .status-icon");
+      const v    = String(inp.value || "").trim();
+      if (icon && icon.textContent === "✓" && v) saved.short[idx] = v;
+      else delete saved.short[idx];
+    }
+  });
+
+  // MATCH: select[data-match][data-left] z ✓
+  items.forEach((it, idx) => {
+    if (it.type === "match") {
+      const left = Array.isArray(it.left) ? it.left : [];
+      const bucket = {};
+      for (let li = 0; li < left.length; li++) {
+        const sel  = document.querySelector(`select[data-match="${idx}"][data-left="${li}"]`);
+        if (!sel) continue;
+        const icon = (sel.parentElement || sel).querySelector(":scope > .status-icon");
+        if (icon && icon.textContent === "✓" && sel.value !== "") {
+          bucket[li] = Number(sel.value);
+        }
+      }
+      if (Object.keys(bucket).length) saved.match[idx] = bucket; else delete saved.match[idx];
+    }
+  });
+
+  writeSavedAnswers(saved);
+}
+
+/** Po renderze: podstawia zapisane poprawne odpowiedzi do pól. */
+function hydrateSavedAnswers(items){
+  const saved = readSavedAnswers();
+
+  // MCQ
+  Object.entries(saved.mcq || {}).forEach(([idx, val]) => {
+    const input = document.querySelector(`input[name="q${idx}"][value="${val}"]`);
+    if (input) input.checked = true;
+  });
+
+  // CLOZE
+  Object.entries(saved.cloze || {}).forEach(([idx, bucket]) => {
+    const inputs = document.querySelectorAll(`input[data-cloze="${idx}"]`);
+    inputs.forEach((inp, bIndex) => {
+      if (bucket && String(bIndex) in bucket) {
+        inp.value = bucket[bIndex];
+      }
+    });
+  });
+
+  // SHORT
+  Object.entries(saved.short || {}).forEach(([idx, val]) => {
+    const inp = document.querySelector(`input[data-short="${idx}"]`);
+    if (inp) inp.value = String(val);
+  });
+
+  // MATCH
+  Object.entries(saved.match || {}).forEach(([idx, bucket]) => {
+    Object.entries(bucket || {}).forEach(([li, rIdx]) => {
+      const sel = document.querySelector(`select[data-match="${idx}"][data-left="${li}"]`);
+      if (sel) sel.value = String(rIdx);
+    });
+  });
+}
+
+/* =================== HELPERY OCENY I RYSOWANIA =================== */
 
 function normalizeAnswerToken(tok){
   if (tok instanceof RegExp) return tok;
   if (Array.isArray(tok))    return tok.map(t => String(t).trim().toLowerCase());
   return String(tok || "").trim().toLowerCase();
 }
-
 function clozeCheck(userVal, expect){
   if (expect instanceof RegExp) return expect.test(userVal);
-  if (Array.isArray(expect))    return expect.includes(userVal);
+  if (Array.isArray(expect))     return expect.includes(userVal);
   return userVal === expect;
 }
-
 function createEl(tag, attrs = {}, html = ""){
   const el = document.createElement(tag);
   Object.entries(attrs).forEach(([k,v]) => {
-    if (k === "style" && typeof v === "object") {
-      Object.assign(el.style, v);
-    } else if (k in el) {
-      el[k] = v;
-    } else {
-      el.setAttribute(k, v);
-    }
+    if (k === "style" && typeof v === "object")      Object.assign(el.style, v);
+    else if (k in el)                                 el[k] = v;
+    else                                              el.setAttribute(k, v);
   });
   if (html) el.innerHTML = html;
   return el;
 }
 
-/* ===== Interaktywny mini-silnik zadań =====
-   Obsługiwane typy:
-   - "mcq":   { prompt, options:[...], answer:Number }
-   - "cloze": { prompt: "text ___ text ___", answer:[...strings/regex/arrays] }
-   - "short": { prompt, answer: string | RegExp | (string[]|RegExp[]) }
-   - "match": { left:[...], right:[...], answer:[indexy right dla left] }
-*/
+/* =================== RENDER INTERAKTYWNY ===================
 
-function renderInteractive(items) {
+Obsługiwane typy:
+- "mcq":   { prompt, options:[...], answer:Number }
+- "cloze": { prompt:"text ___ text ___", answer:[...strings/regex/arrays] }
+- "short": { prompt, answer:string|RegExp|(string[]|RegExp[]) }
+- "match": { left:[...], right:[...], answer:[indexy right dla left] }
+*/
+function renderInteractive(items){
   if (!Array.isArray(items) || !items.length) return;
 
-  const wrap = createEl("div", { className: "interactive", style: { marginTop: "10px" }});
-  const result = createEl("div", { className: "notice", style: { marginTop: "8px" }});
+  const wrap   = createEl("div", { className: "interactive", style: { marginTop: "10px" }});
+  const result = createEl("div", { className: "notice",      style: { marginTop: "8px" }});
 
-  // --- IKONY ✓ / ✗ (dodatek nieinwazyjny) ---
+  // --- IKONY ✓ / ✗ ---
   function setStatusIcon(containerEl, ok){
     if (!containerEl) return;
     let s = containerEl.querySelector(":scope > .status-icon");
@@ -84,10 +207,10 @@ function renderInteractive(items) {
       s = document.createElement("span");
       s.className = "status-icon";
       s.setAttribute("aria-hidden","true");
-      s.style.marginLeft = "8px";
-      s.style.fontWeight = "800";
-      s.style.userSelect = "none";
-      s.style.fontSize = "1.05em";
+      s.style.marginLeft  = "8px";
+      s.style.fontWeight  = "800";
+      s.style.userSelect  = "none";
+      s.style.fontSize    = "1.05em";
       containerEl.appendChild(s);
     }
     s.textContent = ok ? "✓" : "✗";
@@ -100,21 +223,22 @@ function renderInteractive(items) {
   function clearAllStatusIcons(scope){
     (scope || wrap).querySelectorAll(".status-icon").forEach(n => n.remove());
   }
-  // --- KONIEC: IKONY ---
+  // --- /IKONY ---
 
+  // ---- Rysowanie pozycji ----
   items.forEach((it, idx) => {
-    const row = createEl("div", { className: "ix-item card-like", style: { padding:"14px", margin:"10px 0" }});
-    const head = createEl("div", {}, `Zadanie ${idx+1}.<br>${it.prompt || ""}`);
+    const row  = createEl("div", { className: "ix-item card-like", style:{ padding:"14px", margin:"10px 0" }});
+    const head = createEl("div", {}, `Zadanie ${idx+1}. ${it.prompt || ""}`);
     row.appendChild(head);
 
     if (it.type === "mcq") {
-      const optWrap = createEl("div", { style: { display:"grid", gap:"8px" }});
+      const optWrap = createEl("div", { style:{ display:"grid", gap:"8px" }});
       (it.options || []).forEach((optText, i) => {
-        const id = `q${idx}_opt${i}`;
+        const id    = `q${idx}_opt${i}`;
         const label = createEl("label", { htmlFor:id, style:{ display:"flex", gap:"8px", alignItems:"center" }});
         const input = createEl("input", { type:"radio", name:`q${idx}`, id, value:String(i) });
         input.style.transform = "scale(1.2)";
-        const span = createEl("span", {}, optText);
+        const span  = createEl("span", {}, optText);
         label.appendChild(input);
         label.appendChild(span);
         optWrap.appendChild(label);
@@ -124,11 +248,13 @@ function renderInteractive(items) {
     } else if (it.type === "cloze") {
       const p = createEl("p", { style:{ marginTop:"8px" }});
       let count = 0;
-      // UWAGA: poniższa linia zastępuje „___” polami input
-      const html = (it.prompt || "").replace(/___/g, () => {
-        count++;
-        const inp = `<input type="text" data-cloze="${idx}" data-blank="${count}" style="min-width:120px;padding:6px;border:none;border-radius:6px;margin:0 4px 2px 4px;" />`;
-        return inp;
+      const html = String(it.prompt || "").replace(/___/g, () => {
+        // każde „___” → input z a11y-etykietą
+        const i = count++;
+        return `<label class="cloze-slot" style="display:inline-flex;align-items:center;gap:6px;">
+                  <input type="text" data-cloze="${idx}" aria-label="luka ${i+1}" 
+                         style="min-width:140px;padding:6px;border-radius:6px;border:none;">
+                </label>`;
       });
       p.innerHTML = html;
       row.appendChild(p);
@@ -143,7 +269,7 @@ function renderInteractive(items) {
       const left  = Array.isArray(it.left)  ? it.left  : [];
       const right = Array.isArray(it.right) ? it.right : [];
 
-      // tasowanie indeksów right
+      // tasowanie kolejności right (indeksy)
       const indices = right.map((_, i) => i);
       for (let i = indices.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -168,20 +294,19 @@ function renderInteractive(items) {
       row.dataset.rightCount = String(right.length);
     }
 
-    wrap.appendChild(row);
+    els.taskContent.appendChild(row);
   });
 
-  // Panel przycisków
+  // ---- Panel przycisków ----
   const actions  = createEl("div", { className:"actions", style:{ marginTop:"12px" }});
-  const checkBtn = createEl("button", { className:"btn" }, "Sprawdź");
-  const clearBtn = createEl("button", { className:"btn secondary" }, "Wyczyść");
+  const checkBtn = createEl("button", { className:"btn",          id:"checkBtn" }, "Sprawdź");
+  const clearBtn = createEl("button", { className:"btn secondary", id:"clearBtn" }, "Wyczyść");
   actions.appendChild(checkBtn);
   actions.appendChild(clearBtn);
-  wrap.appendChild(actions);
-  wrap.appendChild(result);
-  els.taskContent.appendChild(wrap);
+  els.taskContent.appendChild(actions);
+  els.taskContent.appendChild(result);
 
-  // Pre-normalizacja kluczy
+  // ---- Pre-normalizacja kluczy na potrzeby porównywania ----
   const normItems = items.map(it => {
     if (it.type === "cloze") {
       const ans = Array.isArray(it.answer) ? it.answer.map(a => normalizeAnswerToken(a)) : [];
@@ -189,19 +314,17 @@ function renderInteractive(items) {
     } else if (it.type === "short") {
       const a = it.answer;
       if (a instanceof RegExp) return { ...it, _short: a };
-      if (Array.isArray(a))   return { ...it, _short: a.map(x => normalizeAnswerToken(x)) };
+      if (Array.isArray(a))    return { ...it, _short: a.map(x => normalizeAnswerToken(x)) };
       return { ...it, _short: normalizeAnswerToken(a) };
     } else {
       return it;
     }
   });
 
-  // Sprawdzanie
+  // ---- SPRAWDŹ ----
   checkBtn.addEventListener("click", () => {
     let score = 0, total = 0;
-
-    // usuń stare ikonki (nowe pokażą się po aktualnym sprawdzeniu)
-    clearAllStatusIcons(wrap);
+    clearAllStatusIcons(els.taskContent);
 
     normItems.forEach((it, idx) => {
       if (it.type === "mcq") {
@@ -211,24 +334,20 @@ function renderInteractive(items) {
         const ok = selIdx === Number(it.answer);
         if (ok) score++;
 
-        // podświetlenia + ikonki na labelach
+        // podświetlenia/ikonki na labelach
         const radios = document.querySelectorAll(`input[name="q${idx}"]`);
         radios.forEach(input => {
           const lab = input.closest("label");
           lab.style.borderRadius = "8px";
-          lab.style.padding = "6px 8px";
-          lab.style.background = "";
-
-          // zielony dla poprawnej opcji
+          lab.style.padding      = "6px 8px";
+          lab.style.background   = "";
           if (Number(input.value) === Number(it.answer)) {
             lab.style.background = "rgba(46, 204, 113, .25)";
             setStatusIcon(lab, true);
           } else if (input.checked) {
-            // zaznaczona błędna
             lab.style.background = "rgba(255, 107, 107, .25)";
             setStatusIcon(lab, false);
           } else {
-            // inne czyszczone
             clearStatusIcon(lab);
           }
         });
@@ -243,7 +362,6 @@ function renderInteractive(items) {
           const ok  = clozeCheck(val, exp);
           if (ok) score++;
           inp.style.background = ok ? "rgba(46, 204, 113, .25)" : "rgba(255, 107, 107, .25)";
-          // ikonka przy input
           setStatusIcon(inp.parentElement || inp, ok);
         });
 
@@ -252,7 +370,6 @@ function renderInteractive(items) {
         const inp = document.querySelector(`input[data-short="${idx}"]`);
         const val = (inp?.value || "").trim();
         let ok = false;
-
         if (it._short instanceof RegExp) {
           ok = it._short.test(val);
         } else if (Array.isArray(it._short)) {
@@ -264,7 +381,6 @@ function renderInteractive(items) {
         } else {
           ok = val.toLowerCase() === it._short;
         }
-
         if (ok) score++;
         if (inp) {
           inp.style.background = ok ? "rgba(46, 204, 113, .25)" : "rgba(255, 107, 107, .25)";
@@ -275,8 +391,7 @@ function renderInteractive(items) {
         const left = Array.isArray(it.left) ? it.left : [];
         const ans  = Array.isArray(it.answer) ? it.answer : [];
         total += left.length;
-
-        for (let li = 0; li < left.length; li++) {
+        for (let li=0; li<left.length; li++){
           const sel = document.querySelector(`select[data-match="${idx}"][data-left="${li}"]`);
           const val = sel ? sel.value : "";
           const chosenRightIdx = val === "" ? null : Number(val);
@@ -291,60 +406,59 @@ function renderInteractive(items) {
     });
 
     result.textContent = `Wynik: ${score} / ${total}`;
+
+    // << nowość: po sprawdzaniu zapisz TYLKO poprawne pola >>
+    saveCorrectFromDOM(normItems);
   });
 
+  // ---- WYCZYŚĆ ----
   clearBtn.addEventListener("click", () => {
     // radiobuttony
-    wrap.querySelectorAll('input[type="radio"]').forEach(r => {
+    els.taskContent.querySelectorAll('input[type="radio"]').forEach(r => {
       r.checked = false;
       const lab = r.closest("label");
-      if (lab) {
-        lab.style.background="";
-        clearStatusIcon(lab);
-      }
+      if (lab) { lab.style.background=""; clearStatusIcon(lab); }
     });
     // cloze
-    wrap.querySelectorAll('input[data-cloze]').forEach(i => {
-      i.value = "";
-      i.style.background = "";
-      clearStatusIcon(i.parentElement || i);
+    els.taskContent.querySelectorAll('input[data-cloze]').forEach(i => {
+      i.value = ""; i.style.background = ""; clearStatusIcon(i.parentElement || i);
     });
     // short
-    wrap.querySelectorAll('input[data-short]').forEach(i => {
-      i.value = "";
-      i.style.background = "";
-      clearStatusIcon(i.parentElement || i);
+    els.taskContent.querySelectorAll('input[data-short]').forEach(i => {
+      i.value = ""; i.style.background = ""; clearStatusIcon(i.parentElement || i);
     });
     // match
-    wrap.querySelectorAll('select[data-match]').forEach(sel => {
-      sel.value = "";
-      sel.style.background = "";
-      clearStatusIcon(sel.parentElement || sel);
+    els.taskContent.querySelectorAll('select[data-match]').forEach(sel => {
+      sel.value = ""; sel.style.background = ""; clearStatusIcon(sel.parentElement || sel);
     });
-
-    // wynik + wszelkie pozostałe ikonki
+    // wynik + wszystkie ikonki
     result.textContent = "";
-    clearAllStatusIcons(wrap);
+    clearAllStatusIcons(els.taskContent);
   });
+
+  // ---- Podstaw zapisane poprawne odpowiedzi po renderze ----
+  hydrateSavedAnswers(items);
 }
 
-/* ===== RENDER ===== */
+/* =================== RENDER STRONY ZADANIA =================== */
 
-function render() {
+function render(){
   const idx = day - 1;
-  const [title = "(brak tytułu)", teaser = "", html = "", items = null] = tasks[idx] || [];
+  const [title="(brak tytułu)", teaser="", html="", items=null] = tasks[idx] || [];
 
   els.taskTitle.textContent = `Dzień ${day} – ${title}`;
   els.taskMeta.textContent  = levelTxt;
 
-  // Treść bazowa
+  // treść bazowa z pliku danych
   els.taskContent.innerHTML = html || generateBody(level, day);
 
-  // Interaktywne elementy (jeśli są)
+  // interaktywne elementy
   if (items) renderInteractive(items);
 
+  // teaser
   els.taskTeaser.innerHTML = teaser;
 
+  // status dnia
   const doneCount = (done || []).filter(Boolean).length;
   els.progressInfo.textContent = `Postęp: ${doneCount}/24`;
 
@@ -355,12 +469,11 @@ function render() {
   els.markBtn.classList.toggle("success", isDone);
 }
 
-/* Legacy fallback dla starszych dni bez items */
-function generateBody(level, day){
-  return ""; // Treść bierze się z advent.data.js
-}
+// Legacy fallback — obecnie treść przychodzi z advent.data.js
+function generateBody(){ return ""; }
 
-/* Zdarzenia */
+/* =================== ZDARZENIA GŁÓWNE =================== */
+
 els.markBtn.addEventListener("click", ()=>{
   const i = day - 1;
   const newVal = !done[i];
@@ -372,11 +485,11 @@ els.markBtn.addEventListener("click", ()=>{
   window.location.replace(`./calendar.html?sync=${i+1}:${v}&level=${level}`);
 });
 
-/* Init */
+/* =================== INIT =================== */
 (function init(){
   const okBase = (DATA.base||[]).length===24;
   const okAdv  = (DATA.adv ||[]).length===24;
-  if (level==="adv"  && !okAdv)  level="base";
+  if (level==="adv" && !okAdv)  level="base";
   if (level==="base" && !okBase) level="adv";
   render();
 })();
