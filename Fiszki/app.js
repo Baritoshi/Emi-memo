@@ -10,6 +10,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const addForm   = byId('addForm');
   const input     = byId('inputPairs');
   const setupError= byId('setupError');
+  const setPicker = byId('setPicker');
+  const setInfo   = byId('setInfo');
+  const setSourcePanel = byId('setSourcePanel');
+  const customSourcePanel = byId('customSourcePanel');
+  const sourceModeInputs = Array.from(document.querySelectorAll('input[name="sourceMode"]'));
   const sampleBtn = byId('sampleBtn');
   const startBtn  = byId('startBtn');
   const oneOffBtn = byId('oneOffBtn');
@@ -75,13 +80,82 @@ document.addEventListener('DOMContentLoaded', () => {
   const getDueNow  = () => { const now = Date.now(); return readAll().filter(e => (e.dueAt ?? 0) <= now); };
   const findIndex  = (arr, c) => arr.findIndex(x => keyOf(x) === keyOf(c));
 
+  function getSourceMode(){
+    return sourceModeInputs.find(x => x.checked)?.value || 'builtin';
+  }
+
+  function setSourceMode(mode){
+    sourceModeInputs.forEach(input => { input.checked = input.value === mode; });
+    updateSourceModeUI();
+  }
+
+  function selectedSetName(){
+    return setPicker?.value || window.PairSets?.getCurrent?.() || '';
+  }
+
+  function refreshSetPicker(){
+    if (!window.PairSets || !setPicker) return;
+    const names = PairSets.listSets();
+    setPicker.innerHTML = '';
+
+    names.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = `${name} (${PairSets.getSet(name).length})`;
+      setPicker.appendChild(opt);
+    });
+
+    const current = PairSets.getCurrent();
+    if (current && names.includes(current)) setPicker.value = current;
+    updateSetInfo();
+  }
+
+  function updateSetInfo(){
+    if (!setInfo || !window.PairSets) return;
+    const name = selectedSetName();
+    const count = name ? PairSets.getSet(name).length : 0;
+    setInfo.textContent = name ? `${count} haseł w zestawie.` : 'Brak wbudowanych zestawów.';
+  }
+
+  function updateSourceModeUI(){
+    const custom = getSourceMode() === 'custom';
+    setSourcePanel?.classList.toggle('hidden', custom);
+    customSourcePanel?.classList.toggle('hidden', !custom);
+    sampleBtn?.classList.toggle('hidden', !custom);
+    startBtn?.classList.toggle('hidden', custom);
+    if (oneOffBtn) oneOffBtn.textContent = custom ? 'Start własnej sesji' : 'Start jednorazowo';
+    setupError?.classList.add('hidden');
+  }
+
+  function startFromSelectedSet(mode){
+    if (!window.PairSets) return;
+    const name = selectedSetName();
+    const pairs = PairSets.getSet(name);
+    if (!pairs.length){
+      setupError.classList.remove('hidden');
+      setupError.textContent = 'Wybierz dostępny zestaw.';
+      return;
+    }
+    PairSets.setCurrent(name);
+    setupError.classList.add('hidden');
+    startWithPairs(pairs, mode);
+  }
+
+  function startFromCurrentSource(mode){
+    if (getSourceMode() === 'custom') {
+      startGameFromText(input?.value ?? '', 'oneoff');
+      return;
+    }
+    startFromSelectedSet(mode);
+  }
+
   // --- Handoff z URL / current set z localStorage ---
 function getQP(k){ return new URLSearchParams(location.search).get(k); }
 
 function hydrateFromQueryOrCurrent() {
+  refreshSetPicker();
   if (!window.PairSets) return;
   const textarea = document.getElementById('inputPairs');
-  if (!textarea) return;
 
   // 1) Priorytet: query ?set=...
   let setName = getQP('set');
@@ -92,25 +166,28 @@ function hydrateFromQueryOrCurrent() {
   // 3) Fallback awaryjny: ?data=base64(tekst par)
   const dataB64 = getQP('data');
   if (!setName && dataB64 && !textarea.value) {
-    try { textarea.value = atob(decodeURIComponent(dataB64)); } catch {}
+    try { textarea.value = atob(decodeURIComponent(dataB64)); setSourceMode('custom'); } catch {}
   }
 
   if (setName) {
     const items = PairSets.getSet(setName);
     if (items && items.length) {
-      textarea.value = PairSets.pairsToTextarea(items);
+      setSourceMode('builtin');
+      if (setPicker) setPicker.value = setName;
+      PairSets.setCurrent(setName);
+      updateSetInfo();
     }
   }
 
   // autostart: ?autostart=srs|oneoff|review
   const mode = (getQP('autostart') || '').toLowerCase();
-  if (mode === 'srs')       document.getElementById('startBtn')?.click();
-  else if (mode === 'oneoff') document.getElementById('oneOffBtn')?.click();
+  if (mode === 'srs')       startFromCurrentSource('srs');
+  else if (mode === 'oneoff') startFromCurrentSource('oneoff');
   else if (mode === 'review') document.getElementById('reviewBtn')?.click();
 }
 
 // aktualizacje na żywo (inna karta/menedżer zmienił wybór albo listę)
-window.addEventListener('pairsets:current', hydrateFromQueryOrCurrent);
+window.addEventListener('pairsets:current', () => { refreshSetPicker(); updateSetInfo(); });
 window.addEventListener('pairsets:changed', () => {
   // nic nie nadpisujemy użytkownikowi jeśli już coś wpisał
   if (!document.getElementById('inputPairs')?.value) hydrateFromQueryOrCurrent();
@@ -293,13 +370,19 @@ hydrateFromQueryOrCurrent();
   }
 
   /* ---- Interakcje gry ---- */
-  startBtn?.addEventListener('click', () => startGameFromText(input?.value ?? '', 'srs'));
-  oneOffBtn?.addEventListener('click', () => startGameFromText(input?.value ?? '', 'oneoff'));
+  sourceModeInputs.forEach(input => input.addEventListener('change', updateSourceModeUI));
+  setPicker?.addEventListener('change', () => {
+    window.PairSets?.setCurrent?.(setPicker.value);
+    updateSetInfo();
+  });
+
+  startBtn?.addEventListener('click', () => startFromCurrentSource('srs'));
+  oneOffBtn?.addEventListener('click', () => startFromCurrentSource('oneoff'));
 
   // Obsługa submit (ENTER w polu) — kluczowa poprawka
   addForm?.addEventListener('submit', (e) => {
     e.preventDefault();
-    startGameFromText(input?.value ?? '', 'srs');
+    startFromCurrentSource('srs');
   });
 
   reviewBtn?.addEventListener('click', startReviewMode);
@@ -309,6 +392,7 @@ hydrateFromQueryOrCurrent();
   srsBackBtn?.addEventListener('click', () => { show(setupView); refreshSrsSummary(); });
 
   sampleBtn?.addEventListener('click', () => {
+    setSourceMode('custom');
     input.value = `engine; silnik
 wheel; koło
 wrench; klucz
@@ -375,4 +459,6 @@ coolant; płyn chłodniczy`;
 
   updateReviewBadge();
   refreshSrsSummary();
+  refreshSetPicker();
+  updateSourceModeUI();
 });

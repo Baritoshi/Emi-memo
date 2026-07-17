@@ -1,66 +1,77 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Menedżer Zestawów</title>
-    <link rel="stylesheet" href="../styles.css" />
-    <script src="./sets-helper.js" defer></script>
-    <script src="./app.js" defer></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Biblioteka zestawów — Emi-memo</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    .layout { display: grid; grid-template-columns: minmax(280px, 360px) 1fr; gap: 16px; margin-top: 16px; }
+    .stack { display: grid; gap: 10px; }
+    .section { background: var(--card, rgba(255,255,255,.06)); border: 1px solid rgba(255,255,255,.15); border-radius: 12px; padding: 16px; }
+    .muted { opacity: .8; font-size: .95rem; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+    .toolbar .spacer { flex: 1; }
+    .btn { cursor: pointer; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: var(--card, rgba(255,255,255,.06)); color: inherit; font-weight: 600; text-decoration: none; }
+    .btn:hover { filter: brightness(1.08); }
+    .btn.primary { background: var(--accent, #3b82f6); border-color: transparent; color: #fff; }
+    select { width: 100%; min-height: 420px; }
+    textarea { width: 100%; min-height: 420px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 14px; resize: vertical; }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      select, textarea { min-height: 280px; }
+    }
+  </style>
 </head>
 <body>
-    <div class="app card-like">
-        <div class="topbar">
-            <h1 style="margin:0">Menedżer Zestawów</h1>
-            <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
-        </div>
-
-        <p class="lead">
-            Zestawy wspólne dla gier: <strong>Memory</strong>, <strong>Fiszki</strong>, <strong>Fiszki-Quiz</strong>.
-            Format pozycji: <code>angielskie; polskie</code>. (Każda pozycja to jedna para).
-        </p>
-
-        <!-- Dodawanie / edycja zestawu -->
-        <form id="setForm">
-            <label for="setName"><strong>Nazwa zestawu</strong></label>
-            <input id="setName" type="text" placeholder="Np. Auta — podstawy" required />
-
-            <label for="setItems"><strong>Pozycje (po jednej w wierszu, średnik jako separator)</strong></label>
-            <textarea id="setItems" rows="10" placeholder="engine; silnik
-wheel; koło
-spark plug; świeca zapłonowa"></textarea>
-
-            <div class="row">
-                <button type="submit" class="btn">💾 Zapisz / Nadpisz zestaw</button>
-                <button type="button" id="clearFormBtn" class="btn secondary">Wyczyść formularz</button>
-            </div>
-        </form>
-
-        <!-- Operacje na wybranym zestawie -->
-        <div class="row" style="margin:16px 0">
-            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
-                <label for="setsList"><strong>Twoje zestawy</strong></label>
-                <select id="setsList"></select>
-                <button id="loadBtn" class="btn">Załaduj do formularza</button>
-                <button id="renameBtn" class="btn secondary">Zmień nazwę</button>
-                <button id="deleteBtn" class="btn danger">Usuń</button>
-                <button id="exportBtn" class="btn secondary">Eksportuj (JSON)</button>
-                <button id="exportAllBtn" class="btn secondary">Eksportuj WSZYSTKIE</button>
-                <button id="importBtn" class="btn secondary">Importuj (JSON)</button>
-                <input id="importFile" type="file" accept="application/json" hidden />
-            </div>
-        </div>
-
-        <!-- Tabela podglądu -->
-        <div class="table-wrap">
-            <table class="table" id="previewTable">
-                <thead>
-                    <tr><th>#</th><th>Słówko</th><th>Znaczenie</th></tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-
+  <div class="wrap">
+    <div class="topbar">
+      <a class="btn secondary back-link" href="../index.html">↩︎ Powrót do menu</a>
     </div>
+
+    <header class="section" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div>
+        <h1 style="margin:0;">Biblioteka zestawów</h1>
+        <p class="muted" style="margin:6px 0 0;">Wybierz gotowy zestaw i uruchom ćwiczenie.</p>
+      </div>
+      <div class="spacer" style="flex:1;"></div>
+      <span id="currentInfo" class="muted"></span>
+    </header>
+
+    <main class="layout">
+      <section class="section stack">
+        <label for="setPicker"><strong>Dostępne zestawy</strong></label>
+        <select id="setPicker" size="18"></select>
+
+        <div class="toolbar">
+          <button id="openFlashBtn" class="btn primary" type="button">Fiszki</button>
+          <button id="openQuizBtn" class="btn" type="button">Quiz</button>
+          <button id="openMemoryBtn" class="btn" type="button">Memory</button>
+        </div>
+
+        <button id="copyLinkBtn" class="btn" type="button">Kopiuj link do fiszek</button>
+      </section>
+
+      <section class="section stack">
+        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+          <h2 id="previewTitle" style="margin:0;">Podgląd zestawu</h2>
+          <span id="pairCount" class="muted"></span>
+        </div>
+        <textarea id="pairsArea" readonly spellcheck="false"></textarea>
+      </section>
+    </main>
+
+    <footer class="section" style="margin-top:16px;">
+      <p class="muted" style="margin:0;">
+        Zestawy są wbudowane w stronę w pliku <code>sets/preloaded-sets.js</code>.
+        Uczeń nie importuje, nie eksportuje i nie zapisuje własnych zestawów.
+      </p>
+    </footer>
+  </div>
+
+  <script src="./preloaded-sets.js"></script>
+  <script src="./sets-helper.js"></script>
+  <script src="./app.js" defer></script>
 </body>
 </html>

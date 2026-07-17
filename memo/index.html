@@ -6,6 +6,7 @@
     <title>Memory Card Game</title>
     <link rel="stylesheet" href="../styles.css" />
     <!-- helper MUSI być przed skryptem gry -->
+    <script src="../sets/preloaded-sets.js" defer></script>
     <script src="../sets/sets-helper.js" defer></script>
     <script src="script.js" defer></script>
 </head>
@@ -39,6 +40,8 @@
                 <a href="../sets/index.html" class="btn secondary">Menedżer zestawów</a>
             </div>
 
+            <textarea id="inputPairs" style="display:none"></textarea>
+
             <textarea id="word-input"
                       placeholder="Enter word pairs (use semicolons):
 English;Polish
@@ -65,85 +68,102 @@ English;Polish"
         </div>
     </div>
 
-    <!-- Bezpieczny loader pickera -->
     <script>
-        (function () {
-            function whenPairSetsReady(cb) {
-                if (window.PairSets && typeof window.PairSets.listSets === 'function') return cb();
-                let tries = 0;
-                const iv = setInterval(() => {
-                    if (window.PairSets && typeof window.PairSets.listSets === 'function') {
-                        clearInterval(iv);
-                        cb();
-                    } else if (++tries > 200) { // ~10s
-                        clearInterval(iv);
-                        console.warn('[Memo] PairSets not ready after waiting.');
-                        cb(); // pokaż fallback — brak zestawów
-                    }
-                }, 50);
-            }
+  (function () {
+    function whenPairSetsReady(cb) {
+      if (window.PairSets && typeof window.PairSets.listSets === 'function') return cb();
+      let tries = 0;
+      const iv = setInterval(() => {
+        if (window.PairSets && typeof window.PairSets.listSets === 'function') {
+          clearInterval(iv); cb();
+        } else if (++tries > 200) { clearInterval(iv); cb(); }
+      }, 50);
+    }
+    function getQP(k){ return new URLSearchParams(location.search).get(k); }
 
-            function refreshPicker() {
-                const picker = document.getElementById('setPickerMemo');
-                if (!picker) return;
+    function refreshPicker() {
+      const picker = document.getElementById('setPickerMemo');
+      if (!picker) return;
+      picker.innerHTML = '';
+      let sets = [];
+      try { sets = PairSets.listSets(); } catch { sets = []; }
 
-                picker.innerHTML = '';
+      if (!sets.length) {
+        const opt = document.createElement('option');
+        opt.value = ''; opt.textContent = '— brak zestawów —';
+        opt.disabled = true; opt.selected = true;
+        picker.appendChild(opt);
+        return;
+      }
+      sets.forEach(name => {
+        const opt = document.createElement('option');
+        const count = PairSets.getSet(name).length;
+        opt.value = name; opt.textContent = `${name} (${count})`;
+        picker.appendChild(opt);
+      });
+      // podświetl bieżący
+      const cur = PairSets.getCurrent();
+      if (cur && sets.includes(cur)) picker.value = cur;
+    }
 
-                let sets = [];
-                try {
-                    sets = (window.PairSets && typeof PairSets.listSets === 'function') ? PairSets.listSets() : [];
-                    console.log('[Memo] listSets ->', sets);
-                } catch (e) {
-                    console.warn('[Memo] listSets error:', e);
-                    sets = [];
-                }
+    function hydrateFromQueryOrCurrent() {
+      const textarea = document.getElementById('word-input');
+      if (!textarea || !window.PairSets) return;
 
-                if (!sets.length) {
-                    const opt = document.createElement('option');
-                    opt.value = '';
-                    opt.textContent = '— brak zestawów —';
-                    opt.disabled = true;
-                    opt.selected = true;
-                    picker.appendChild(opt);
-                    return;
-                }
+      let setName = getQP('set');
+      if (!setName) setName = PairSets.getCurrent();
 
-                sets.forEach(name => {
-                    const opt = document.createElement('option');
-                    const count = (window.PairSets && typeof PairSets.getSet === 'function')
-                        ? PairSets.getSet(name).length
-                        : 0;
-                    opt.value = name;
-                    opt.textContent = `${name} (${count})`;
-                    picker.appendChild(opt);
-                });
-            }
+      const dataB64 = getQP('data');
+      if (!setName && dataB64 && !textarea.value) {
+        try { textarea.value = atob(decodeURIComponent(dataB64)); } catch {}
+      }
 
-            document.addEventListener('DOMContentLoaded', () => {
-                const loadBtn = document.getElementById('loadSetMemo');
-                const textarea = document.getElementById('word-input');
+      if (setName) {
+        const items = PairSets.getSet(setName);
+        if (Array.isArray(items) && items.length) {
+          textarea.value = PairSets.pairsToTextarea(items);
+        }
+      }
 
-                whenPairSetsReady(refreshPicker);
+      const mode = (getQP('autostart') || '').toLowerCase();
+      if (mode) {
+        // wyzwól przycisk startu odpowiedniego trybu, jeśli gra go ma
+        const map = { srs: 'startBtn', oneoff: 'oneOffBtn', review: 'reviewBtn' };
+        const id = map[mode];
+        if (id) document.getElementById(id)?.click();
+      }
+    }
 
-                if (loadBtn && textarea) {
-                    loadBtn.addEventListener('click', () => {
-                        if (!window.PairSets) return alert('Sets helper not ready.');
-                        const picker = document.getElementById('setPickerMemo');
-                        const name = picker?.value;
-                        if (!name) return;
-                        const items = PairSets.getSet(name);
-                        textarea.value = PairSets.pairsToTextarea(items);
-                        textarea.focus();
-                    });
-                }
+    document.addEventListener('DOMContentLoaded', () => {
+      const loadBtn = document.getElementById('loadSetMemo');
+      const textarea = document.getElementById('word-input');
 
-                // po powrocie z menedżera (bez reloadu)
-                window.addEventListener('focus', () => {
-                    if (window.PairSets) refreshPicker();
-                });
-            });
-        })();
-    </script>
+      whenPairSetsReady(() => {
+        refreshPicker();
+        hydrateFromQueryOrCurrent();
+      });
+
+      if (loadBtn && textarea) {
+        loadBtn.addEventListener('click', () => {
+          if (!window.PairSets) return alert('Sets helper not ready.');
+          const picker = document.getElementById('setPickerMemo');
+          const name = picker?.value;
+          if (!name) return;
+          const items = PairSets.getSet(name);
+          textarea.value = PairSets.pairsToTextarea(items);
+          try { PairSets.setCurrent(name); } catch {}
+          textarea.focus();
+        });
+      }
+
+      // odśwież picker po powrocie z menedżera lub zmianie w innej karcie
+      window.addEventListener('pairsets:changed', () => { refreshPicker(); });
+      window.addEventListener('pairsets:current', () => { refreshPicker(); if (!textarea.value) hydrateFromQueryOrCurrent(); });
+      window.addEventListener('focus', () => { refreshPicker(); if (!textarea.value) hydrateFromQueryOrCurrent(); });
+    });
+  })();
+</script>
+
 
 </body>
 </html>

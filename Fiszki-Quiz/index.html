@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fiszki — Quiz (wpisywanie odpowiedzi)</title>
   <link rel="stylesheet" href="../styles.css" />
+  <script src="../sets/preloaded-sets.js" defer></script>
+  <script src="../sets/sets-helper.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -17,20 +19,44 @@
 
     <!-- SETUP VIEW -->
     <section id="setupView" class="view setup card-like active" aria-labelledby="setupTitle">
-      <h1 id="setupTitle">Fiszki-Quiz — wprowadź pary i startuj</h1>
+      <h1 id="setupTitle">Fiszki-Quiz — wybierz zestaw i startuj</h1>
 
       <p class="lead">
-        Wpisuj po jednej parze w wierszu, <strong>słówko</strong> i <strong>znaczenie</strong> rozdziel
-        <strong>średnikiem</strong> (<code>;</code>). Np.: <em>engine; silnik</em>.
-        Dopuszczalne wiele odpowiedzi po <code>|</code>.
+        Korzystaj z gotowych zestawów albo wklej własne słówka tylko na jedną sesję.
+        We własnej liście dopuszczalne jest wiele odpowiedzi po <code>|</code>.
       </p>
 
       <!-- ważne: formularz, żeby Enter uruchamiał start -->
       <form id="setupForm" autocomplete="off">
-        <textarea id="inputPairs" spellcheck="false" placeholder="engine; silnik|motor
+        <fieldset class="card-like" style="margin-bottom:12px">
+          <legend>Źródło słówek</legend>
+          <div class="row" style="gap:12px; align-items:center; justify-content:flex-start">
+            <label class="checkbox">
+              <input type="radio" name="sourceMode" value="builtin" checked />
+              Gotowy zestaw
+            </label>
+            <label class="checkbox">
+              <input type="radio" name="sourceMode" value="custom" />
+              Własne słówka (jednorazowo)
+            </label>
+          </div>
+        </fieldset>
+
+        <div id="setSourcePanel" class="card-like" style="margin-bottom:12px">
+          <label for="setPicker"><strong>Zestaw</strong></label>
+          <select id="setPicker" style="width:100%; margin-top:8px"></select>
+          <div id="setInfo" class="fine" style="margin-top:8px"></div>
+        </div>
+
+        <div id="customSourcePanel" class="hidden">
+          <textarea id="inputPairs" spellcheck="false" placeholder="engine; silnik|motor
 wheel; koło
 wrench; klucz
 spark plug; świeca zapłonowa"></textarea>
+          <div class="fine" style="margin-top:8px">
+            Własne słówka nie zapisują się jako zestaw i uruchamiają tylko sesję jednorazową.
+          </div>
+        </div>
 
         <div id="setupError" class="error hidden" role="alert"></div>
 
@@ -56,13 +82,9 @@ spark plug; świeca zapłonowa"></textarea>
           <button id="reviewBtn" class="btn secondary" type="button" title="Załaduj karty „na dziś” z SRS">Powtórka (0)</button>
           <button id="clearReviewBtn" class="btn secondary" type="button" title="Wyczyść zapisaną bazę SRS">Wyczyść powtórkę</button>
 
-          <button id="exportBtn" class="btn secondary" type="button" title="Eksportuj pamięć SRS do pliku">Eksport</button>
-          <button id="importBtn" class="btn secondary" type="button" title="Importuj pamięć z pliku (scalanie bez duplikatów)">Import</button>
-          <input id="importFile" type="file" accept="application/json" class="hidden" />
-
-          <button id="sampleBtn" class="btn secondary" type="button">Wstaw przykładową listę</button>
-          <button id="oneOffBtn" class="btn" type="button" title="Jednorazowa sesja — bez zapisu do SRS">Start (jednorazowo)</button>
-          <button id="startBtn" class="btn success" type="button" title="Start z pamięcią SRS">Start</button>
+          <button id="sampleBtn" class="btn secondary hidden" type="button">Wstaw przykładową listę</button>
+          <button id="oneOffBtn" class="btn" type="button" title="Jednorazowa sesja — bez zapisu do SRS">Start jednorazowo</button>
+          <button id="startBtn" class="btn success" type="button" title="Start z pamięcią SRS">Start z pamięcią</button>
         </div>
       </form>
     </section>

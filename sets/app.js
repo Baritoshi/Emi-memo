@@ -1,158 +1,109 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const $ = (id) => document.getElementById(id);
+// sets/app.js â€” read-only set library for students.
+(function () {
+  const $ = (id) => document.getElementById(id);
 
-    const setForm = $('setForm');
-    const setName = $('setName');
-    const setItems = $('setItems');
-    const clearFormBtn = $('clearFormBtn');
+  const els = {
+    setPicker: $('setPicker'),
+    pairsArea: $('pairsArea'),
+    previewTitle: $('previewTitle'),
+    pairCount: $('pairCount'),
+    currentInfo: $('currentInfo'),
+    openFlashBtn: $('openFlashBtn'),
+    openQuizBtn: $('openQuizBtn'),
+    openMemoryBtn: $('openMemoryBtn'),
+    copyLinkBtn: $('copyLinkBtn')
+  };
 
-    const setsList = $('setsList');
-    const loadBtn = $('loadBtn');
-    const renameBtn = $('renameBtn');
-    const deleteBtn = $('deleteBtn');
-    const exportBtn = $('exportBtn');
-    const exportAllBtn = $('exportAllBtn');
-    const importBtn = $('importBtn');
-    const importFile = $('importFile');
+  function selectedName() {
+    return els.setPicker?.value || PairSets.getCurrent();
+  }
 
-    const previewTable = $('previewTable').querySelector('tbody');
+  function selectSet(name) {
+    if (!name || !PairSets.hasSet(name)) return;
 
-    function refreshList(selectedName) {
-        const names = PairSets.listSets();
-        setsList.innerHTML = '';
-        names.forEach(name => {
-            const opt = document.createElement('option');
-            opt.value = name;
-            opt.textContent = `${name} (${PairSets.getSet(name).length})`;
-            if (selectedName && selectedName === name) opt.selected = true;
-            setsList.appendChild(opt);
-        });
-        buildPreview();
+    PairSets.setCurrent(name);
+    if (els.setPicker) els.setPicker.value = name;
+
+    const items = PairSets.getSet(name);
+    els.previewTitle.textContent = name;
+    els.pairCount.textContent = `${items.length} haseÅ‚`;
+    els.pairsArea.value = PairSets.pairsToTextarea(items);
+    els.currentInfo.textContent = `BieÅ¼Ä…cy zestaw: ${name}`;
+  }
+
+  function refreshPicker() {
+    if (!window.PairSets || !els.setPicker) return;
+
+    const names = PairSets.listSets();
+    els.setPicker.innerHTML = '';
+
+    if (!names.length) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'Brak wbudowanych zestawÃ³w';
+      opt.disabled = true;
+      opt.selected = true;
+      els.setPicker.appendChild(opt);
+      els.previewTitle.textContent = 'Brak zestawÃ³w';
+      els.pairCount.textContent = '';
+      els.pairsArea.value = '';
+      els.currentInfo.textContent = '';
+      return;
     }
 
-    function parseTextarea(text) {
-        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-        const items = [];
-        lines.forEach(line => {
-            const parts = line.split(';');
-            if (parts.length >= 2) {
-                const term = parts[0].trim();
-                const meaning = parts.slice(1).join(';').trim();
-                if (term && meaning) items.push({ term, meaning });
-            }
-        });
-        return items;
+    names.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = `${name} (${PairSets.getSet(name).length})`;
+      els.setPicker.appendChild(opt);
+    });
+
+    selectSet(PairSets.getCurrent() || names[0]);
+  }
+
+  function openGame(relUrl, setName) {
+    if (!setName) return;
+
+    const url = new URL(relUrl, location.href);
+    url.searchParams.set('set', setName);
+
+    if (/Fiszki-Quiz|Fiszki/.test(relUrl)) {
+      url.searchParams.set('autostart', 'srs');
     }
 
-    function buildPreview() {
-        const name = setsList.value;
-        previewTable.innerHTML = '';
-        if (!name) return;
-        const items = PairSets.getSet(name);
-        items.forEach((it, idx) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${idx + 1}</td><td>${escapeHtml(it.term)}</td><td>${escapeHtml(it.meaning)}</td>`;
-            previewTable.appendChild(tr);
-        });
+    window.location.assign(url.toString());
+  }
+
+  async function copyFlashcardsLink(setName) {
+    if (!setName) return;
+
+    const url = new URL('../Fiszki/index.html', location.href);
+    url.searchParams.set('set', setName);
+    url.searchParams.set('autostart', 'srs');
+
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      alert('Skopiowano link do fiszek.');
+    } catch {
+      alert(url.toString());
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!window.PairSets) {
+      console.warn('[sets/app] PairSets helper not found.');
+      return;
     }
 
-    function escapeHtml(s) {
-        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
+    refreshPicker();
 
-    // Init
-    refreshList();
+    els.setPicker?.addEventListener('change', () => selectSet(selectedName()));
+    els.openFlashBtn?.addEventListener('click', () => openGame('../Fiszki/index.html', selectedName()));
+    els.openQuizBtn?.addEventListener('click', () => openGame('../Fiszki-Quiz/index.html', selectedName()));
+    els.openMemoryBtn?.addEventListener('click', () => openGame('../memo/index.html', selectedName()));
+    els.copyLinkBtn?.addEventListener('click', () => copyFlashcardsLink(selectedName()));
 
-    // Zapis / nadpis
-    setForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const name = setName.value.trim();
-        if (!name) { alert('Podaj nazwê zestawu.'); return; }
-        const items = parseTextarea(setItems.value);
-        if (items.length === 0) { alert('Dodaj co najmniej jedn¹ parê.'); return; }
-        PairSets.saveSet(name, items);
-        refreshList(name);
-        alert(`Zapisano zestaw „${name}” (${items.length} pozycji).`);
-    });
-
-    // Czyszczenie formularza
-    clearFormBtn.addEventListener('click', () => {
-        setName.value = '';
-        setItems.value = '';
-        setName.focus();
-    });
-
-    // Za³aduj wybrany do formularza
-    loadBtn.addEventListener('click', () => {
-        const name = setsList.value;
-        if (!name) return;
-        const items = PairSets.getSet(name);
-        setName.value = name;
-        setItems.value = PairSets.pairsToTextarea(items);
-        alert(`Za³adowano „${name}” do formularza (pozycje: ${items.length}). Zapisz, aby nadpisaæ.`);
-    });
-
-    // Zmieñ nazwê
-    renameBtn.addEventListener('click', () => {
-        const oldName = setsList.value;
-        if (!oldName) return;
-        const newName = prompt('Nowa nazwa zestawu:', oldName);
-        if (!newName || newName.trim() === oldName) return;
-        const ok = PairSets.renameSet(oldName, newName.trim());
-        if (!ok) { alert('Nie uda³o siê zmieniæ nazwy (istnieje ju¿ zestaw o tej nazwie?).'); return; }
-        refreshList(newName.trim());
-    });
-
-    // Usuñ
-    deleteBtn.addEventListener('click', () => {
-        const name = setsList.value;
-        if (!name) return;
-        if (!confirm(`Usun¹æ zestaw „${name}”?`)) return;
-        PairSets.deleteSet(name);
-        refreshList();
-    });
-
-    // Eksport jednego
-    exportBtn.addEventListener('click', () => {
-        const name = setsList.value;
-        if (!name) return;
-        const payload = PairSets.exportSet(name);
-        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `set-${name.replace(/\s+/g, '_')}.json`;
-        document.body.appendChild(a); a.click(); a.remove();
-        URL.revokeObjectURL(a.href);
-    });
-
-    // Eksport wszystkich
-    exportAllBtn.addEventListener('click', () => {
-        const payload = PairSets.exportAll();
-        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `all-sets.json`;
-        document.body.appendChild(a); a.click(); a.remove();
-        URL.revokeObjectURL(a.href);
-    });
-
-    // Import
-    importBtn.addEventListener('click', () => importFile.click());
-    importFile.addEventListener('change', async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        try {
-            const obj = JSON.parse(await file.text());
-            const res = PairSets.importJsonObject(obj, /*merge=*/true);
-            alert(`Import zakoñczony. Zmodyfikowano zestawy: ${res.setsAffected.join(', ')}`);
-            refreshList();
-        } catch (err) {
-            console.error(err);
-            alert('Nieudany import. Upewnij siê, ¿e to poprawny JSON wygenerowany przez Mened¿er.');
-        } finally {
-            importFile.value = '';
-        }
-    });
-
-    setsList.addEventListener('change', buildPreview);
-});
+    window.addEventListener('pairsets:current', refreshPicker);
+    window.addEventListener('focus', refreshPicker);
+  });
+})();

@@ -9,6 +9,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const setupForm   = $('setupForm');
   const inputPairs  = $('inputPairs');
   const setupError  = $('setupError');
+  const setPicker   = $('setPicker');
+  const setInfo     = $('setInfo');
+  const setSourcePanel = $('setSourcePanel');
+  const customSourcePanel = $('customSourcePanel');
+  const sourceModeInputs = Array.from(document.querySelectorAll('input[name="sourceMode"]'));
   const startBtn    = $('startBtn');
   const oneOffBtn   = $('oneOffBtn');
   const reviewBtn   = $('reviewBtn');
@@ -68,36 +73,108 @@ document.addEventListener('DOMContentLoaded', () => {
   const getDueNow  = () => { const now = Date.now(); return readAll().filter(e => (e.dueAt ?? 0) <= now); };
   const findIndex  = (arr, c) => arr.findIndex(x => keyOf(x) === keyOf(c));
 
+  function getSourceMode(){
+    return sourceModeInputs.find(x => x.checked)?.value || 'builtin';
+  }
+
+  function setSourceMode(mode){
+    sourceModeInputs.forEach(input => { input.checked = input.value === mode; });
+    updateSourceModeUI();
+  }
+
+  function selectedSetName(){
+    return setPicker?.value || window.PairSets?.getCurrent?.() || '';
+  }
+
+  function refreshSetPicker(){
+    if (!window.PairSets || !setPicker) return;
+    const names = PairSets.listSets();
+    setPicker.innerHTML = '';
+
+    names.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = `${name} (${PairSets.getSet(name).length})`;
+      setPicker.appendChild(opt);
+    });
+
+    const current = PairSets.getCurrent();
+    if (current && names.includes(current)) setPicker.value = current;
+    updateSetInfo();
+  }
+
+  function updateSetInfo(){
+    if (!setInfo || !window.PairSets) return;
+    const name = selectedSetName();
+    const count = name ? PairSets.getSet(name).length : 0;
+    setInfo.textContent = name ? `${count} haseł w zestawie.` : 'Brak wbudowanych zestawów.';
+  }
+
+  function updateSourceModeUI(){
+    const custom = getSourceMode() === 'custom';
+    setSourcePanel?.classList.toggle('hidden', custom);
+    customSourcePanel?.classList.toggle('hidden', !custom);
+    sampleBtn?.classList.toggle('hidden', !custom);
+    startBtn?.classList.toggle('hidden', custom);
+    if (oneOffBtn) oneOffBtn.textContent = custom ? 'Start własnej sesji' : 'Start jednorazowo';
+    setupError?.classList.add('hidden');
+  }
+
+  function startFromSelectedSet(mode){
+    if (!window.PairSets) return;
+    const name = selectedSetName();
+    const pairs = PairSets.getSet(name);
+    if (!pairs.length){
+      setupError.classList.remove('hidden');
+      setupError.textContent = 'Wybierz dostępny zestaw.';
+      return;
+    }
+    PairSets.setCurrent(name);
+    setupError.classList.add('hidden');
+    startWithPairs(pairs, mode);
+  }
+
+  function startFromCurrentSource(mode){
+    if (getSourceMode() === 'custom') {
+      startGameFromText(inputPairs?.value ?? '', 'oneoff');
+      return;
+    }
+    startFromSelectedSet(mode);
+  }
+
   // --- Handoff z URL / current set z localStorage ---
 function getQP(k){ return new URLSearchParams(location.search).get(k); }
 
 function hydrateFromQueryOrCurrent() {
+  refreshSetPicker();
   if (!window.PairSets) return;
   const textarea = document.getElementById('inputPairs');
-  if (!textarea) return;
 
   let setName = getQP('set');
   if (!setName) setName = PairSets.getCurrent();
 
   const dataB64 = getQP('data');
   if (!setName && dataB64 && !textarea.value) {
-    try { textarea.value = atob(decodeURIComponent(dataB64)); } catch {}
+    try { textarea.value = atob(decodeURIComponent(dataB64)); setSourceMode('custom'); } catch {}
   }
 
   if (setName) {
     const items = PairSets.getSet(setName);
     if (items && items.length) {
-      textarea.value = PairSets.pairsToTextarea(items);
+      setSourceMode('builtin');
+      if (setPicker) setPicker.value = setName;
+      PairSets.setCurrent(setName);
+      updateSetInfo();
     }
   }
 
   const mode = (getQP('autostart') || '').toLowerCase();
-  if (mode === 'srs')       document.getElementById('startBtn')?.click();
-  else if (mode === 'oneoff') document.getElementById('oneOffBtn')?.click();
+  if (mode === 'srs')       startFromCurrentSource('srs');
+  else if (mode === 'oneoff') startFromCurrentSource('oneoff');
   else if (mode === 'review') document.getElementById('reviewBtn')?.click();
 }
 
-window.addEventListener('pairsets:current', hydrateFromQueryOrCurrent);
+window.addEventListener('pairsets:current', () => { refreshSetPicker(); updateSetInfo(); });
 window.addEventListener('pairsets:changed', () => {
   if (!document.getElementById('inputPairs')?.value) hydrateFromQueryOrCurrent();
 });
@@ -328,13 +405,19 @@ hydrateFromQueryOrCurrent();
   }
 
   /* ---------- Interakcje ---------- */
+  sourceModeInputs.forEach(input => input.addEventListener('change', updateSourceModeUI));
+  setPicker?.addEventListener('change', () => {
+    window.PairSets?.setCurrent?.(setPicker.value);
+    updateSetInfo();
+  });
+
   // Start z przycisków
-  startBtn?.addEventListener('click', () => startGameFromText(inputPairs?.value ?? '', 'srs'));
-  oneOffBtn?.addEventListener('click', () => startGameFromText(inputPairs?.value ?? '', 'oneoff'));
+  startBtn?.addEventListener('click', () => startFromCurrentSource('srs'));
+  oneOffBtn?.addEventListener('click', () => startFromCurrentSource('oneoff'));
   // Start Enterem w formularzu
   setupForm?.addEventListener('submit', (e) => {
     e.preventDefault();
-    startGameFromText(inputPairs?.value ?? '', 'srs');
+    startFromCurrentSource('srs');
   });
 
   reviewBtn?.addEventListener('click', startReviewMode);
@@ -394,6 +477,7 @@ hydrateFromQueryOrCurrent();
 
   // Przykładowa lista
   sampleBtn?.addEventListener('click', () => {
+    setSourceMode('custom');
     inputPairs.value = `engine; silnik|motor
 wheel; koło
 wrench; klucz
@@ -406,4 +490,6 @@ spark plug; świeca zapłonowa`;
 
   // Inicjalne odświeżenie
   updateReviewBadge();
+  refreshSetPicker();
+  updateSourceModeUI();
 });
